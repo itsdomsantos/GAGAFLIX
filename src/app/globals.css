@@ -55,6 +55,12 @@ body {
   color: transparent;
 }
 
+/* Imagens dentro de filas arrastáveis não devem ser "agarradas" pelo browser */
+[data-scroller] img {
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
 /* Rows horizontais sem scrollbar visível */
 .no-scrollbar {
   scrollbar-width: none;
