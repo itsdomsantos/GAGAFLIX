@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Scroller from "./Scroller";
 import type { Era } from "@/lib/types";
 
 /** O carrossel circular das eras — a assinatura do GAGAFLIX original. */
@@ -18,7 +19,7 @@ export default function EraCarousel({ eras }: { eras: Era[] }) {
         </Link>
       </div>
       {/* py-8 dá espaço ao glow do hover para não ser cortado pelo overflow */}
-      <div className="no-scrollbar flex snap-x gap-6 overflow-x-auto px-6 py-8 sm:gap-9">
+      <Scroller className="flex snap-x gap-6 px-6 py-8 sm:gap-9">
         {eras.map((era) => (
           <Link
             key={era.slug}
@@ -57,7 +58,7 @@ export default function EraCarousel({ eras }: { eras: Era[] }) {
             </p>
           </Link>
         ))}
-      </div>
+      </Scroller>
     </section>
   );
 }
