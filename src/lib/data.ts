@@ -1,6 +1,32 @@
+import fs from "node:fs";
+import path from "node:path";
 import { seedEras, seedTimeline, seedVideos } from "./seed";
 import { getServerClient, hasSupabase } from "./supabase";
 import type { Era, TimelineMoment, Video } from "./types";
+
+const IMAGE_EXTS = ["png", "jpg", "jpeg", "webp"];
+
+/** Procura um ficheiro local em public/ (ex.: eras/mayhem → /eras/mayhem.png). */
+function localAsset(rel: string): string | null {
+  for (const ext of IMAGE_EXTS) {
+    if (fs.existsSync(path.join(process.cwd(), "public", `${rel}.${ext}`))) {
+      return `/${rel}.${ext}`;
+    }
+  }
+  return null;
+}
+
+/**
+ * Arte automática por convenção de nomes: se a era não tiver imagens definidas
+ * no admin, usa public/eras/<slug>.png (círculo) e public/eras/logos/<slug>.png (logo).
+ */
+function withLocalArt(eras: Era[]): Era[] {
+  return eras.map((e) => ({
+    ...e,
+    image_url: e.image_url ?? localAsset(`eras/${e.slug}`),
+    logo_url: e.logo_url ?? localAsset(`eras/logos/${e.slug}`),
+  }));
+}
 
 /**
  * Camada de dados do site público: lê do Supabase quando está configurado,
@@ -17,8 +43,8 @@ async function fromSupabase<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
 }
 
 export async function getEras(): Promise<Era[]> {
-  if (!hasSupabase) return seedEras;
-  return fromSupabase(async () => {
+  if (!hasSupabase) return withLocalArt(seedEras);
+  const eras = await fromSupabase(async () => {
     const { data, error } = await getServerClient()
       .from("eras")
       .select("*")
@@ -26,6 +52,7 @@ export async function getEras(): Promise<Era[]> {
     if (error) throw error;
     return (data as Era[]) ?? [];
   }, seedEras);
+  return withLocalArt(eras);
 }
 
 export async function getEra(slug: string): Promise<Era | null> {
