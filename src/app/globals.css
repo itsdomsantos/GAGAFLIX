@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+/*
+ * GAGAFLIX — Chrome Gothic
+ * Tema único e deliberado: um mundo escuro-metálico de streaming.
+ * O acento --era é camaleónico: as páginas de era sobrepõem-no.
+ */
+:root {
+  --bg: #0a0a0d;
+  --surface: #131318;
+  --surface-2: #1b1b22;
+  --line: #26262e;
+  --text: #ededf0;
+  --muted: #8e8e9a;
+  --accent: #e04e20; /* o vermelho-flame do logo */
+  --era: var(--accent);
+  --chrome-hi: #f4f4f7;
+  --chrome-mid: #b9bcc8;
+  --chrome-lo: #6e7280;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-era: var(--era);
+  --font-sans: var(--font-archivo), system-ui, sans-serif;
+  --font-display: var(--font-metal), serif;
+}
+
+html {
+  scrollbar-gutter: stable;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-archivo), system-ui, sans-serif;
+}
+
+/* Título metálico — o acabamento chrome da marca */
+.chrome-text {
+  background: linear-gradient(
+    180deg,
+    var(--chrome-hi) 0%,
+    var(--chrome-mid) 55%,
+    var(--chrome-lo) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Rows horizontais sem scrollbar visível */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Player próprio para ficheiros diretos */
+video::-webkit-media-controls-panel {
+  background-image: linear-gradient(transparent, rgba(10, 10, 13, 0.9));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
