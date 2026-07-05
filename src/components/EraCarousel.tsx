@@ -19,13 +19,13 @@ export default function EraCarousel({ eras }: { eras: Era[] }) {
         </Link>
       </div>
       {/* py-8 dá espaço ao glow do hover para não ser cortado pelo overflow */}
-      <Scroller className="flex snap-x gap-6 px-6 py-8 sm:gap-9">
+      <Scroller className="flex gap-6 px-6 py-8 sm:gap-9">
         {eras.map((era) => (
           <Link
             key={era.slug}
             href={`/eras/${era.slug}`}
             aria-label={`${era.name} era`}
-            className="group shrink-0 snap-start"
+            className="group shrink-0"
             style={{ "--c": era.accent } as React.CSSProperties}
           >
             <div className="relative h-36 w-36 overflow-hidden rounded-full ring-1 ring-line transition-all duration-300 group-hover:ring-2 group-hover:ring-[var(--c)] group-hover:shadow-[0_0_40px_-6px_var(--c)] sm:h-48 sm:w-48">

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
- * Fila horizontal com drag do rato + setas de navegação.
+ * Fila horizontal com drag do rato (com inércia) + setas de navegação.
  * Usado pelas rows de vídeos e pelo carrossel das eras.
  */
 export default function Scroller({
@@ -15,6 +15,9 @@ export default function Scroller({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const drag = useRef({ down: false, startX: 0, scrollLeft: 0, moved: 0 });
+  const velocity = useRef(0);
+  const lastMove = useRef({ x: 0, t: 0 });
+  const raf = useRef<number | null>(null);
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(false);
 
@@ -34,13 +37,24 @@ export default function Scroller({
     return () => {
       el.removeEventListener("scroll", update);
       window.removeEventListener("resize", update);
+      if (raf.current) cancelAnimationFrame(raf.current);
     };
   }, [update]);
+
+  function stopInertia() {
+    if (raf.current) {
+      cancelAnimationFrame(raf.current);
+      raf.current = null;
+    }
+  }
 
   function onPointerDown(e: React.PointerEvent) {
     if (e.pointerType !== "mouse") return; // touch já faz scroll nativo
     const el = ref.current;
     if (!el) return;
+    stopInertia();
+    velocity.current = 0;
+    lastMove.current = { x: e.clientX, t: performance.now() };
     drag.current = { down: true, startX: e.clientX, scrollLeft: el.scrollLeft, moved: 0 };
   }
 
@@ -48,6 +62,11 @@ export default function Scroller({
     if (!drag.current.down) return;
     const el = ref.current;
     if (!el) return;
+    const now = performance.now();
+    const dt = now - lastMove.current.t;
+    if (dt > 0) velocity.current = (e.clientX - lastMove.current.x) / dt; // px/ms
+    lastMove.current = { x: e.clientX, t: now };
+
     const dx = e.clientX - drag.current.startX;
     drag.current.moved = Math.max(drag.current.moved, Math.abs(dx));
     if (drag.current.moved > 5) el.setPointerCapture?.(e.pointerId);
@@ -55,7 +74,24 @@ export default function Scroller({
   }
 
   function endDrag() {
+    if (!drag.current.down) return;
     drag.current.down = false;
+
+    // Inércia: continua a deslizar e desacelera suavemente
+    if (Math.abs(velocity.current) > 0.15) {
+      const step = () => {
+        const el = ref.current;
+        if (!el) {
+          raf.current = null;
+          return;
+        }
+        el.scrollLeft -= velocity.current * 14;
+        velocity.current *= 0.94;
+        raf.current =
+          Math.abs(velocity.current) > 0.04 ? requestAnimationFrame(step) : null;
+      };
+      raf.current = requestAnimationFrame(step);
+    }
   }
 
   // Se arrastou, o "click" que se segue não deve abrir o link
@@ -70,6 +106,7 @@ export default function Scroller({
   function scrollByDir(dir: number) {
     const el = ref.current;
     if (!el) return;
+    stopInertia();
     el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: "smooth" });
   }
 
