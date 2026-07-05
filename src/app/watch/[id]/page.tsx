@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import BackButton from "@/components/BackButton";
 import EraTheme from "@/components/EraTheme";
 import Player from "@/components/Player";
 import Row from "@/components/Row";
@@ -37,6 +38,7 @@ export default async function WatchPage({
       {era && <EraTheme accent={era.accent} />}
 
       <div className="mx-auto max-w-5xl px-4 sm:px-6">
+        <BackButton />
         <Player url={video.url} title={video.title} />
 
         <div className="mt-6 flex flex-wrap items-start justify-between gap-4">

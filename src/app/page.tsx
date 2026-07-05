@@ -1,3 +1,4 @@
+import EraCarousel from "@/components/EraCarousel";
 import Hero from "@/components/Hero";
 import Row from "@/components/Row";
 import { getEras, getFeatured, getRecent, getVideos } from "@/lib/data";
@@ -28,7 +29,9 @@ export default async function HomePage() {
         </section>
       )}
 
-      <Row title="Adicionado recentemente" videos={recent} accents={accents} />
+      <EraCarousel eras={eras} />
+
+      <Row title="Recently added" videos={recent} accents={accents} />
 
       {VIDEO_TYPES.map((type) => (
         <Row

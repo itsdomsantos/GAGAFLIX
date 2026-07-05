@@ -14,6 +14,7 @@ export const seedEras: Era[] = [
       "The birth of the phenomenon: The Fame and The Fame Monster turn Stefani Germanotta into Lady Gaga, and pop music is never the same again.",
     accent: "#d4af37",
     image_url: null,
+    logo_url: null,
     sort: 1,
   },
   {
@@ -24,6 +25,7 @@ export const seedEras: Era[] = [
       "Leather, metal and an anthem of freedom. The era that founded the Little Monster nation and took the Monster Ball around the world.",
     accent: "#9fb4c7",
     image_url: null,
+    logo_url: null,
     sort: 2,
   },
   {
@@ -34,6 +36,7 @@ export const seedEras: Era[] = [
       "Pop as art, art as pop. The most experimental and misunderstood era — and exactly for that reason, beloved by the fans.",
     accent: "#a6e22e",
     image_url: null,
+    logo_url: null,
     sort: 3,
   },
   {
@@ -44,6 +47,7 @@ export const seedEras: Era[] = [
       "The pink hat, a soul laid bare, and Super Bowl LI. Gaga's most intimate era, dedicated to her aunt Joanne.",
     accent: "#e8a798",
     image_url: null,
+    logo_url: null,
     sort: 4,
   },
   {
@@ -54,6 +58,7 @@ export const seedEras: Era[] = [
       "Ally, Bradley Cooper and an Oscar for 'Shallow'. Gaga conquers Hollywood and proves there is no stage she can't own.",
     accent: "#c98a4b",
     image_url: null,
+    logo_url: null,
     sort: 5,
   },
   {
@@ -64,6 +69,7 @@ export const seedEras: Era[] = [
       "Hot pink, chrome and healing dance-pop. From a mid-pandemic release to the Chromatica Ball across the world's stadiums.",
     accent: "#ff3e9a",
     image_url: null,
+    logo_url: null,
     sort: 6,
   },
   {
@@ -74,6 +80,7 @@ export const seedEras: Era[] = [
       "Lee Quinzel sings the classics. The companion album to Joker: Folie à Deux shows jazz Gaga at her most theatrical.",
     accent: "#c8102e",
     image_url: null,
+    logo_url: null,
     sort: 7,
   },
   {
@@ -84,6 +91,7 @@ export const seedEras: Era[] = [
       "The return to dark, raw pop. Abracadabra, Disease, the historic Coachella headline and the chrome-gothic era this site is dressed in.",
     accent: "#e04e20",
     image_url: null,
+    logo_url: null,
     sort: 8,
   },
 ];

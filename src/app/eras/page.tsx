@@ -37,12 +37,17 @@ export default async function ErasPage() {
             />
             <div className="relative">
               <p className="text-xs uppercase tracking-[0.25em] text-muted">{era.years}</p>
-              <h2
-                className="font-display mt-2 text-4xl transition-colors duration-300"
-                style={{ color: era.accent }}
-              >
-                {era.name}
-              </h2>
+              {era.logo_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={era.logo_url} alt={era.name} className="mt-2 max-h-16 object-contain" />
+              ) : (
+                <h2
+                  className="font-display mt-2 text-4xl transition-colors duration-300"
+                  style={{ color: era.accent }}
+                >
+                  {era.name}
+                </h2>
+              )}
               <p className="mt-3 line-clamp-3 text-sm text-muted">{era.description}</p>
             </div>
           </Link>

@@ -13,6 +13,7 @@ interface FormState {
   description: string;
   accent: string;
   image_url: string;
+  logo_url: string;
   sort: number;
 }
 
@@ -24,6 +25,7 @@ const empty: FormState = {
   description: "",
   accent: "#e04e20",
   image_url: "",
+  logo_url: "",
   sort: 99,
 };
 
@@ -51,6 +53,7 @@ export default function AdminEras() {
       description: e.description ?? "",
       accent: e.accent,
       image_url: e.image_url ?? "",
+      logo_url: e.logo_url ?? "",
       sort: e.sort,
     });
     setError(null);
@@ -70,6 +73,7 @@ export default function AdminEras() {
       description: form.description.trim(),
       accent: form.accent,
       image_url: form.image_url.trim() || null,
+      logo_url: form.logo_url.trim() || null,
       sort: form.sort,
     };
     const result = form.original_slug
@@ -142,10 +146,16 @@ export default function AdminEras() {
               </div>
             </div>
             <div>
-              <label htmlFor="e-img" className={labelCls}>Background image (optional)</label>
+              <label htmlFor="e-img" className={labelCls}>Era artwork (carousel circle + fallback backdrop)</label>
               <input id="e-img" type="url" className={inputCls} value={form.image_url}
                 onChange={(e) => setForm({ ...form, image_url: e.target.value })}
                 placeholder="https://…/era.jpg" />
+            </div>
+            <div className="md:col-span-2">
+              <label htmlFor="e-logo" className={labelCls}>Era logo (transparent PNG, optional — replaces the text title)</label>
+              <input id="e-logo" type="url" className={inputCls} value={form.logo_url}
+                onChange={(e) => setForm({ ...form, logo_url: e.target.value })}
+                placeholder="https://…/era-logo.png" />
             </div>
           </div>
           <div className="mt-6 flex gap-3">

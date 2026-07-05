@@ -7,6 +7,8 @@ export interface Era {
   description: string;
   accent: string;
   image_url: string | null;
+  /** Logo/lettering da era (PNG transparente) — substitui o nome em texto quando existe. */
+  logo_url: string | null;
   sort: number;
 }
 

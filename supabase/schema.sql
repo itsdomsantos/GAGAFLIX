@@ -12,8 +12,12 @@ create table if not exists public.eras (
   description text not null default '',
   accent      text not null default '#e04e20',
   image_url   text,
+  logo_url    text,
   sort        integer not null default 99
 );
+
+-- If you created the tables before logo_url existed, run just this line:
+-- alter table public.eras add column if not exists logo_url text;
 
 -- Videos (each video has ONE source: its link)
 create table if not exists public.videos (
