@@ -28,7 +28,7 @@ export default async function ErasPage() {
               <img
                 src={era.image_url}
                 alt=""
-                className="absolute inset-0 h-full w-full object-cover opacity-25 transition-opacity duration-300 group-hover:opacity-40"
+                className="absolute inset-0 h-full w-full object-cover opacity-25 grayscale transition-all duration-500 group-hover:opacity-40 group-hover:grayscale-0"
               />
             )}
             <div
