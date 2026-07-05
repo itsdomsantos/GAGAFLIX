@@ -24,17 +24,17 @@ export default function AdminHome() {
   }, []);
 
   const cards = [
-    { href: "/admin/videos", label: "Vídeos", value: counts.videos, hint: "Adicionar e editar vídeos — cola um link e está no ar." },
-    { href: "/admin/videos", label: "Em destaque", value: counts.featured, hint: "Vídeos marcados como destaque; o mais recente abre a homepage." },
-    { href: "/admin/eras", label: "Eras", value: counts.eras, hint: "Nomes, descrições e cores de cada era." },
-    { href: "/admin/timeline", label: "Timeline", value: counts.moments, hint: "Os marcos da carreira, de 2008 até hoje." },
+    { href: "/admin/videos", label: "Videos", value: counts.videos, hint: "Add and edit videos — paste a link and it's live." },
+    { href: "/admin/videos", label: "Featured", value: counts.featured, hint: "Videos flagged as featured; the newest one opens the homepage." },
+    { href: "/admin/eras", label: "Eras", value: counts.eras, hint: "Names, descriptions and colors for every era." },
+    { href: "/admin/timeline", label: "Timeline", value: counts.moments, hint: "Career milestones, from 2008 to today." },
   ];
 
   return (
     <div>
-      <h1 className="font-display text-4xl chrome-text">Painel</h1>
+      <h1 className="font-display text-4xl chrome-text">Dashboard</h1>
       <p className="mt-2 text-sm text-muted">
-        Tudo o que gravas aqui aparece no site em segundos — sem deploys, sem código.
+        Everything you save here shows up on the site in seconds — no deploys, no code.
       </p>
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map((c) => (

@@ -42,7 +42,7 @@ export default async function EraPage({
 
       {eraVideos.length === 0 && (
         <p className="px-6 text-muted">
-          Ainda não há vídeos nesta era — em breve, Little Monster. 🐾
+          No videos in this era yet — coming soon, Little Monster. 🐾
         </p>
       )}
 

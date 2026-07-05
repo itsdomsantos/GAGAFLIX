@@ -1,10 +1,10 @@
 -- ============================================================
--- GAGAFLIX — esquema da base de dados (Supabase / Postgres)
--- Corre este ficheiro UMA vez no SQL Editor do teu projeto Supabase:
--- Dashboard → SQL Editor → New query → colar tudo → Run
+-- GAGAFLIX — database schema (Supabase / Postgres)
+-- Run this file ONCE in your Supabase project's SQL Editor:
+-- Dashboard → SQL Editor → New query → paste everything → Run
 -- ============================================================
 
--- Eras da carreira
+-- Career eras
 create table if not exists public.eras (
   slug        text primary key,
   name        text not null,
@@ -15,7 +15,7 @@ create table if not exists public.eras (
   sort        integer not null default 99
 );
 
--- Vídeos (cada vídeo tem UMA fonte: o link)
+-- Videos (each video has ONE source: its link)
 create table if not exists public.videos (
   id            uuid primary key default gen_random_uuid(),
   title         text not null,
@@ -29,7 +29,7 @@ create table if not exists public.videos (
   created_at    timestamptz not null default now()
 );
 
--- Marcos da timeline
+-- Timeline milestones
 create table if not exists public.timeline_moments (
   id        uuid primary key default gen_random_uuid(),
   date      date not null,
@@ -40,7 +40,7 @@ create table if not exists public.timeline_moments (
 );
 
 -- ------------------------------------------------------------
--- Segurança (RLS): toda a gente lê, só tu (autenticado) escreves
+-- Security (RLS): everyone reads, only you (authenticated) write
 -- ------------------------------------------------------------
 alter table public.eras enable row level security;
 alter table public.videos enable row level security;
@@ -62,18 +62,18 @@ create policy "admin write timeline" on public.timeline_moments
   for all to authenticated using (true) with check (true);
 
 -- ------------------------------------------------------------
--- Conteúdo de arranque (o mesmo que o site mostra sem Supabase).
--- Podes editar ou apagar tudo depois, no /admin.
+-- Starter content (the same the site shows without Supabase).
+-- Edit or delete everything later in /admin.
 -- ------------------------------------------------------------
 insert into public.eras (slug, name, years, description, accent, sort) values
-  ('the-fame', 'The Fame', '2008 – 2010', 'O nascimento do fenómeno: The Fame e The Fame Monster transformam Stefani Germanotta em Lady Gaga e o pop nunca mais foi o mesmo.', '#d4af37', 1),
-  ('born-this-way', 'Born This Way', '2011 – 2012', 'Couro, metal e um hino de liberdade. A era que fundou a nação Little Monster e levou o Monster Ball ao mundo inteiro.', '#9fb4c7', 2),
-  ('artpop', 'ARTPOP', '2013 – 2015', 'Pop como arte, arte como pop. A era mais experimental e incompreendida — e por isso mesmo adorada pelos fãs.', '#a6e22e', 3),
-  ('joanne', 'Joanne', '2016 – 2017', 'O chapéu rosa, a alma a descoberto e o Super Bowl LI. A era mais íntima de Gaga, dedicada à tia Joanne.', '#e8a798', 4),
-  ('a-star-is-born', 'A Star Is Born', '2018 – 2019', 'Ally, Bradley Cooper e um Óscar para ''Shallow''. Gaga conquista Hollywood e prova que não há palco que não domine.', '#c98a4b', 5),
-  ('chromatica', 'Chromatica', '2020 – 2022', 'Rosa choque, cromados e dance-pop curativo. Do lançamento em plena pandemia à Chromatica Ball pelos estádios do mundo.', '#ff3e9a', 6),
-  ('harlequin', 'Harlequin', '2024', 'Lee Quinzel canta os clássicos. O álbum-companheiro de Joker: Folie à Deux mostra a Gaga jazz no seu registo mais teatral.', '#c8102e', 7),
-  ('mayhem', 'MAYHEM', '2025 – hoje', 'O regresso ao pop escuro e cru. Abracadabra, Disease, o headline histórico de Coachella e a era chrome-gothic que dá a cara a este site.', '#e04e20', 8)
+  ('the-fame', 'The Fame', '2008 – 2010', 'The birth of the phenomenon: The Fame and The Fame Monster turn Stefani Germanotta into Lady Gaga, and pop music is never the same again.', '#d4af37', 1),
+  ('born-this-way', 'Born This Way', '2011 – 2012', 'Leather, metal and an anthem of freedom. The era that founded the Little Monster nation and took the Monster Ball around the world.', '#9fb4c7', 2),
+  ('artpop', 'ARTPOP', '2013 – 2015', 'Pop as art, art as pop. The most experimental and misunderstood era — and exactly for that reason, beloved by the fans.', '#a6e22e', 3),
+  ('joanne', 'Joanne', '2016 – 2017', 'The pink hat, a soul laid bare, and Super Bowl LI. Gaga''s most intimate era, dedicated to her aunt Joanne.', '#e8a798', 4),
+  ('a-star-is-born', 'A Star Is Born', '2018 – 2019', 'Ally, Bradley Cooper and an Oscar for ''Shallow''. Gaga conquers Hollywood and proves there is no stage she can''t own.', '#c98a4b', 5),
+  ('chromatica', 'Chromatica', '2020 – 2022', 'Hot pink, chrome and healing dance-pop. From a mid-pandemic release to the Chromatica Ball across the world''s stadiums.', '#ff3e9a', 6),
+  ('harlequin', 'Harlequin', '2024', 'Lee Quinzel sings the classics. The companion album to Joker: Folie à Deux shows jazz Gaga at her most theatrical.', '#c8102e', 7),
+  ('mayhem', 'MAYHEM', '2025 – now', 'The return to dark, raw pop. Abracadabra, Disease, the historic Coachella headline and the chrome-gothic era this site is dressed in.', '#e04e20', 8)
 on conflict (slug) do nothing;
 
 insert into public.videos (title, url, type, era_slug, event, date, featured) values
@@ -94,18 +94,18 @@ insert into public.videos (title, url, type, era_slug, event, date, featured) va
   ('Alejandro', 'https://www.youtube.com/watch?v=niqrrmev4mA', 'mv', 'the-fame', 'Official Music Video', '2010-06-08', false);
 
 insert into public.timeline_moments (date, title, body, era_slug) values
-  ('2008-08-19', 'The Fame', 'O álbum de estreia apresenta Lady Gaga ao mundo. Just Dance e Poker Face conquistam o nº 1 em dezenas de países.', 'the-fame'),
-  ('2009-11-18', 'The Fame Monster', 'Bad Romance chega com o vídeo mais icónico da década e o Monster Ball arranca.', 'the-fame'),
-  ('2010-09-12', 'O vestido de carne', 'Nos VMAs, Gaga recebe o prémio de Video of the Year vestida de… carne. A cultura pop nunca recuperou.', 'the-fame'),
-  ('2011-05-23', 'Born This Way', 'Um hino de aceitação vendido em milhões: a era que deu nome aos Little Monsters e à Born This Way Foundation.', 'born-this-way'),
-  ('2013-11-06', 'ARTPOP', 'Gaga funde música, tecnologia e arte performativa — com direito a voo em vestido drone no artRAVE.', 'artpop'),
-  ('2015-02-22', 'Tributo a Sound of Music', 'Nos Óscares, Gaga silencia os céticos com um tributo a Julie Andrews que relança a sua carreira vocal.', 'artpop'),
-  ('2016-10-21', 'Joanne', 'O registo mais pessoal, dedicado à tia Joanne. Million Reasons torna-se um clássico instantâneo.', 'joanne'),
-  ('2017-02-05', 'Super Bowl LI Halftime', 'Do telhado do estádio para a história: um dos halftime shows mais aclamados de sempre.', 'joanne'),
-  ('2018-10-05', 'A Star Is Born', 'Ally nasce. O filme com Bradley Cooper é um fenómeno global de bilheteira e crítica.', 'a-star-is-born'),
-  ('2019-02-24', 'Óscar por Shallow', 'Melhor Canção Original — e aquele dueto ao piano com Bradley Cooper que parou o mundo.', 'a-star-is-born'),
-  ('2020-05-29', 'Chromatica', 'Dance-pop como cura em plena pandemia. Rain On Me dá a Gaga mais um nº 1 global.', 'chromatica'),
-  ('2022-07-17', 'The Chromatica Ball', 'A digressão de estádios finalmente acontece — brutalista, teatral e inesquecível.', 'chromatica'),
-  ('2024-09-27', 'Harlequin', 'O álbum-companheiro de Joker: Folie à Deux revisita clássicos pela lente de Lee Quinzel.', 'harlequin'),
-  ('2025-03-07', 'MAYHEM', 'O regresso ao pop escuro. Abracadabra e Disease dominam as tabelas e a estética chrome-gothic define a era.', 'mayhem'),
-  ('2025-04-11', 'Coachella: The Art of Personal Chaos', 'Um headline histórico de duas horas que os fãs (e a crítica) colocam entre os melhores de sempre do festival.', 'mayhem');
+  ('2008-08-19', 'The Fame', 'The debut album introduces Lady Gaga to the world. Just Dance and Poker Face hit #1 in dozens of countries.', 'the-fame'),
+  ('2009-11-18', 'The Fame Monster', 'Bad Romance arrives with the most iconic video of the decade, and the Monster Ball begins.', 'the-fame'),
+  ('2010-09-12', 'The meat dress', 'At the VMAs, Gaga accepts Video of the Year dressed in… meat. Pop culture never recovered.', 'the-fame'),
+  ('2011-05-23', 'Born This Way', 'An anthem of acceptance selling millions: the era that named the Little Monsters and the Born This Way Foundation.', 'born-this-way'),
+  ('2013-11-06', 'ARTPOP', 'Gaga fuses music, technology and performance art — flying drone dress at the artRAVE included.', 'artpop'),
+  ('2015-02-22', 'The Sound of Music tribute', 'At the Oscars, Gaga silences the skeptics with a Julie Andrews tribute that relaunches her vocal career.', 'artpop'),
+  ('2016-10-21', 'Joanne', 'Her most personal record, dedicated to her aunt Joanne. Million Reasons becomes an instant classic.', 'joanne'),
+  ('2017-02-05', 'Super Bowl LI Halftime', 'From the stadium roof into history: one of the most acclaimed halftime shows of all time.', 'joanne'),
+  ('2018-10-05', 'A Star Is Born', 'Ally is born. The film with Bradley Cooper becomes a global box-office and critical phenomenon.', 'a-star-is-born'),
+  ('2019-02-24', 'Oscar for Shallow', 'Best Original Song — and that piano duet with Bradley Cooper that stopped the world.', 'a-star-is-born'),
+  ('2020-05-29', 'Chromatica', 'Dance-pop as healing in the middle of a pandemic. Rain On Me hands Gaga another global #1.', 'chromatica'),
+  ('2022-07-17', 'The Chromatica Ball', 'The stadium tour finally happens — brutalist, theatrical and unforgettable.', 'chromatica'),
+  ('2024-09-27', 'Harlequin', 'The companion album to Joker: Folie à Deux revisits the classics through the lens of Lee Quinzel.', 'harlequin'),
+  ('2025-03-07', 'MAYHEM', 'The return to dark pop. Abracadabra and Disease dominate the charts, and the chrome-gothic aesthetic defines the era.', 'mayhem'),
+  ('2025-04-11', 'Coachella: The Art of Personal Chaos', 'A historic two-hour headline set that fans (and critics) rank among the festival''s greatest ever.', 'mayhem');

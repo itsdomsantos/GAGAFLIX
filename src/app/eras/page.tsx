@@ -12,7 +12,7 @@ export default async function ErasPage() {
     <div className="mx-auto max-w-7xl px-4 pb-16 pt-28 sm:px-6">
       <h1 className="font-display text-5xl chrome-text sm:text-6xl">Eras</h1>
       <p className="mt-3 max-w-xl text-muted">
-        Cada era é um mundo. Escolhe por onde entrar.
+        Every era is a world. Choose your way in.
       </p>
 
       <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

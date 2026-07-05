@@ -48,7 +48,7 @@ export default function SearchPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 pb-20 pt-28 sm:px-6">
       <label htmlFor="search" className="sr-only">
-        Pesquisar vídeos
+        Search videos
       </label>
       <input
         ref={inputRef}
@@ -63,13 +63,13 @@ export default function SearchPage() {
       <div className="mt-8">
         {query.trim() === "" && (
           <p className="text-muted">
-            Escreve qualquer coisa — título, evento, era ou ano. Dica: a tecla{" "}
+            Type anything — a title, event, era or year. Tip: press{" "}
             <kbd className="rounded border border-line bg-surface px-1.5 py-0.5 text-xs">/</kbd>{" "}
-            abre a pesquisa em qualquer página.
+            to open search from any page.
           </p>
         )}
         {query.trim() !== "" && loaded && results.length === 0 && (
-          <p className="text-muted">Nada encontrado para “{query}”. 🐾</p>
+          <p className="text-muted">Nothing found for “{query}”. 🐾</p>
         )}
 
         <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">

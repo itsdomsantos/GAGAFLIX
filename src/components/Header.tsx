@@ -53,7 +53,7 @@ export default function Header() {
         <div className="ml-auto flex items-center gap-4">
           <Link
             href="/search"
-            aria-label="Pesquisar (tecla /)"
+            aria-label="Search (press /)"
             className="rounded-full p-2 text-muted transition-colors hover:text-text"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">

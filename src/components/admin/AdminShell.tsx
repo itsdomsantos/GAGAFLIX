@@ -15,8 +15,8 @@ export const btnGhostCls =
   "inline-flex items-center gap-2 rounded-md border border-line px-4 py-2 text-sm transition-colors hover:border-accent";
 
 const nav = [
-  { href: "/admin", label: "Painel" },
-  { href: "/admin/videos", label: "Vídeos" },
+  { href: "/admin", label: "Dashboard" },
+  { href: "/admin/videos", label: "Videos" },
   { href: "/admin/eras", label: "Eras" },
   { href: "/admin/timeline", label: "Timeline" },
 ];
@@ -44,7 +44,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   if (checking) {
     return (
       <div className="flex min-h-screen items-center justify-center text-muted">
-        A verificar sessão…
+        Checking session…
       </div>
     );
   }
@@ -75,7 +75,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
             onClick={() => getBrowserClient().auth.signOut()}
             className="ml-auto text-sm text-muted transition-colors hover:text-accent"
           >
-            Sair
+            Sign out
           </button>
         </div>
       </div>
@@ -88,16 +88,16 @@ function SetupCard() {
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="max-w-lg rounded-lg border border-line bg-surface p-8">
-        <h1 className="font-display text-3xl chrome-text">Admin ainda não ligado</h1>
+        <h1 className="font-display text-3xl chrome-text">Admin not connected yet</h1>
         <p className="mt-4 text-sm leading-relaxed text-muted">
-          O painel precisa do Supabase para funcionar. Segue a checklist do{" "}
-          <code className="rounded bg-surface-2 px-1.5 py-0.5">README.md</code> (secção
-          «A tua parte»): criar o projeto Supabase, correr o{" "}
-          <code className="rounded bg-surface-2 px-1.5 py-0.5">supabase/schema.sql</code> e
-          definir as duas variáveis{" "}
-          <code className="rounded bg-surface-2 px-1.5 py-0.5">NEXT_PUBLIC_SUPABASE_URL</code> e{" "}
+          The panel needs Supabase to work. Follow the checklist in{" "}
+          <code className="rounded bg-surface-2 px-1.5 py-0.5">README.md</code> (the
+          “Your part” section): create the Supabase project, run{" "}
+          <code className="rounded bg-surface-2 px-1.5 py-0.5">supabase/schema.sql</code> and
+          set the two variables{" "}
+          <code className="rounded bg-surface-2 px-1.5 py-0.5">NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
           <code className="rounded bg-surface-2 px-1.5 py-0.5">NEXT_PUBLIC_SUPABASE_ANON_KEY</code>.
-          Enquanto isso, o site público funciona com o conteúdo de arranque.
+          Meanwhile, the public site keeps running on the starter content.
         </p>
       </div>
     </div>
@@ -115,14 +115,14 @@ function LoginCard() {
     setBusy(true);
     setError(null);
     const { error } = await getBrowserClient().auth.signInWithPassword({ email, password });
-    if (error) setError("Login falhou — confirma o email e a palavra-passe.");
+    if (error) setError("Sign in failed — check your email and password.");
     setBusy(false);
   }
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
       <form onSubmit={onSubmit} className="w-full max-w-sm rounded-lg border border-line bg-surface p-8">
-        <h1 className="font-display text-3xl chrome-text">Entrar no Admin</h1>
+        <h1 className="font-display text-3xl chrome-text">Admin sign in</h1>
         <div className="mt-6">
           <label htmlFor="email" className={labelCls}>
             Email
@@ -139,7 +139,7 @@ function LoginCard() {
         </div>
         <div className="mt-4">
           <label htmlFor="password" className={labelCls}>
-            Palavra-passe
+            Password
           </label>
           <input
             id="password"
@@ -153,7 +153,7 @@ function LoginCard() {
         </div>
         {error && <p className="mt-4 text-sm text-accent">{error}</p>}
         <button type="submit" disabled={busy} className={`${btnCls} mt-6 w-full justify-center`}>
-          {busy ? "A entrar…" : "Entrar"}
+          {busy ? "Signing in…" : "Sign in"}
         </button>
       </form>
     </div>

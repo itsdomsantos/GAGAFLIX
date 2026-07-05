@@ -87,7 +87,7 @@ export default function AdminVideos() {
       ? await supabase.from("videos").update(payload).eq("id", form.id)
       : await supabase.from("videos").insert(payload);
     if (result.error) {
-      setError(`Não gravou: ${result.error.message}`);
+      setError(`Could not save: ${result.error.message}`);
     } else {
       setForm(null);
       await load();
@@ -96,9 +96,9 @@ export default function AdminVideos() {
   }
 
   async function remove(v: Video) {
-    if (!window.confirm(`Apagar «${v.title}»? Esta ação não tem volta.`)) return;
+    if (!window.confirm(`Delete “${v.title}”? This cannot be undone.`)) return;
     const { error } = await getBrowserClient().from("videos").delete().eq("id", v.id);
-    if (error) setError(`Não apagou: ${error.message}`);
+    if (error) setError(`Could not delete: ${error.message}`);
     else await load();
   }
 
@@ -110,10 +110,10 @@ export default function AdminVideos() {
   return (
     <div>
       <div className="flex items-center justify-between gap-4">
-        <h1 className="font-display text-4xl chrome-text">Vídeos</h1>
+        <h1 className="font-display text-4xl chrome-text">Videos</h1>
         {!form && (
           <button className={btnCls} onClick={() => setForm(empty)}>
-            + Novo vídeo
+            + New video
           </button>
         )}
       </div>
@@ -124,21 +124,21 @@ export default function AdminVideos() {
         <form onSubmit={save} className="mt-6 rounded-lg border border-line bg-surface p-6">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="md:col-span-2">
-              <label htmlFor="v-title" className={labelCls}>Título</label>
+              <label htmlFor="v-title" className={labelCls}>Title</label>
               <input id="v-title" required className={inputCls} value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
                 placeholder="Poker Face — Dailymotion rip 2009" />
             </div>
             <div className="md:col-span-2">
               <label htmlFor="v-url" className={labelCls}>
-                Link do vídeo {sourceKind && <span className="ml-2 rounded bg-surface-2 px-1.5 py-0.5 text-[10px] normal-case text-accent">player: {sourceKind}</span>}
+                Video link {sourceKind && <span className="ml-2 rounded bg-surface-2 px-1.5 py-0.5 text-[10px] normal-case text-accent">player: {sourceKind}</span>}
               </label>
               <input id="v-url" required type="url" className={inputCls} value={form.url}
                 onChange={(e) => setForm({ ...form, url: e.target.value })}
                 placeholder="https://www.youtube.com/watch?v=… · dailymotion · vimeo · x.com · .mp4 · .m3u8" />
             </div>
             <div>
-              <label htmlFor="v-type" className={labelCls}>Tipo</label>
+              <label htmlFor="v-type" className={labelCls}>Type</label>
               <select id="v-type" className={inputCls} value={form.type}
                 onChange={(e) => setForm({ ...form, type: e.target.value as VideoType })}>
                 {VIDEO_TYPES.map((t) => (
@@ -150,48 +150,48 @@ export default function AdminVideos() {
               <label htmlFor="v-era" className={labelCls}>Era</label>
               <select id="v-era" className={inputCls} value={form.era_slug}
                 onChange={(e) => setForm({ ...form, era_slug: e.target.value })}>
-                <option value="">— sem era —</option>
+                <option value="">— no era —</option>
                 {eras.map((er) => (
                   <option key={er.slug} value={er.slug}>{er.name}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label htmlFor="v-event" className={labelCls}>Evento (opcional)</label>
+              <label htmlFor="v-event" className={labelCls}>Event (optional)</label>
               <input id="v-event" className={inputCls} value={form.event}
                 onChange={(e) => setForm({ ...form, event: e.target.value })}
                 placeholder="Coachella, SNL, VMAs…" />
             </div>
             <div>
-              <label htmlFor="v-date" className={labelCls}>Data</label>
+              <label htmlFor="v-date" className={labelCls}>Date</label>
               <input id="v-date" type="date" className={inputCls} value={form.date}
                 onChange={(e) => setForm({ ...form, date: e.target.value })} />
             </div>
             <div className="md:col-span-2">
-              <label htmlFor="v-thumb" className={labelCls}>Thumbnail (opcional — no YouTube é automática)</label>
+              <label htmlFor="v-thumb" className={labelCls}>Thumbnail (optional — automatic for YouTube)</label>
               <input id="v-thumb" type="url" className={inputCls} value={form.thumbnail_url}
                 onChange={(e) => setForm({ ...form, thumbnail_url: e.target.value })}
-                placeholder="https://…/imagem.jpg" />
+                placeholder="https://…/image.jpg" />
             </div>
             {previewThumb && (
               <div className="md:col-span-2">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={previewThumb} alt="Pré-visualização da thumbnail" className="h-28 rounded-md object-cover ring-1 ring-line" />
+                <img src={previewThumb} alt="Thumbnail preview" className="h-28 rounded-md object-cover ring-1 ring-line" />
               </div>
             )}
             <label className="flex items-center gap-2 text-sm md:col-span-2">
               <input type="checkbox" checked={form.featured}
                 onChange={(e) => setForm({ ...form, featured: e.target.checked })}
                 className="h-4 w-4 accent-[var(--accent)]" />
-              Destaque na homepage (hero)
+              Feature on the homepage (hero)
             </label>
           </div>
           <div className="mt-6 flex gap-3">
             <button type="submit" disabled={busy} className={btnCls}>
-              {busy ? "A gravar…" : form.id ? "Gravar alterações" : "Adicionar vídeo"}
+              {busy ? "Saving…" : form.id ? "Save changes" : "Add video"}
             </button>
             <button type="button" className={btnGhostCls} onClick={() => setForm(null)}>
-              Cancelar
+              Cancel
             </button>
           </div>
         </form>
@@ -219,18 +219,18 @@ export default function AdminVideos() {
                   {v.date ? ` · ${v.date}` : ""} · {parseSource(v.url).kind}
                 </p>
               </div>
-              <button className={btnGhostCls} onClick={() => edit(v)}>Editar</button>
+              <button className={btnGhostCls} onClick={() => edit(v)}>Edit</button>
               <button
                 className="rounded-md border border-line px-3 py-2 text-sm text-muted transition-colors hover:border-accent hover:text-accent"
                 onClick={() => remove(v)}
               >
-                Apagar
+                Delete
               </button>
             </li>
           );
         })}
         {videos.length === 0 && (
-          <li className="p-6 text-sm text-muted">Ainda sem vídeos — clica em «+ Novo vídeo» e cola o teu primeiro link. 🐾</li>
+          <li className="p-6 text-sm text-muted">No videos yet — hit “+ New video” and paste your first link. 🐾</li>
         )}
       </ul>
     </div>

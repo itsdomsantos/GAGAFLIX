@@ -62,7 +62,7 @@ export default async function WatchPage({
         </div>
       </div>
 
-      <Row title="Também vais adorar" videos={related} accents={accents} />
+      <Row title="You'll also love" videos={related} accents={accents} />
     </div>
   );
 }

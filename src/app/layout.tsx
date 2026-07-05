@@ -19,7 +19,7 @@ const metalMania = Metal_Mania({
 export const metadata: Metadata = {
   title: "GAGAFLIX — The Ultimate Lady Gaga Experience",
   description:
-    "Todo o universo Lady Gaga num só sítio: performances ao vivo, videoclipes, entrevistas e mais. By Little Monsters, to Little Monsters.",
+    "The whole Lady Gaga universe in one place: live performances, music videos, interviews and more. By Little Monsters, to Little Monsters.",
 };
 
 export default function RootLayout({
@@ -28,15 +28,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt" className={`${archivo.variable} ${metalMania.variable} h-full antialiased`}>
+    <html lang="en" className={`${archivo.variable} ${metalMania.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col pb-16 md:pb-0">
         <KeyboardShortcuts />
         <Header />
         <main className="flex-1">{children}</main>
         <footer className="border-t border-line px-6 py-8 text-center text-sm text-muted">
           <span className="font-display text-lg chrome-text align-middle mr-2">GAGAFLIX</span>
-          by Little Monsters, to Little Monsters. Site de fãs — todos os vídeos são lidos das
-          plataformas originais.
+          by Little Monsters, to Little Monsters. Fan site — every video plays from its
+          original platform.
         </footer>
         <BottomBar />
       </body>

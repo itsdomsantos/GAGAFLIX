@@ -42,7 +42,7 @@ const items = [
   },
   {
     href: "/search",
-    label: "Pesquisa",
+    label: "Search",
     icon: (
       <>
         <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" fill="none" />

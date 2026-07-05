@@ -44,14 +44,14 @@ export default function Hero({ video, era }: { video: Video; era: Era | null }) 
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M8 5v14l11-7L8 5Z" />
             </svg>
-            Assistir
+            Watch
           </Link>
           {era && (
             <Link
               href={`/eras/${era.slug}`}
               className="inline-flex items-center gap-2 rounded-md border border-line bg-surface/60 px-6 py-3 font-semibold backdrop-blur transition-colors hover:border-era"
             >
-              Explorar a era
+              Explore the era
             </Link>
           )}
         </div>

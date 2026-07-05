@@ -76,7 +76,7 @@ export default function AdminEras() {
       ? await supabase.from("eras").update(payload).eq("slug", form.original_slug)
       : await supabase.from("eras").insert(payload);
     if (result.error) {
-      setError(`Não gravou: ${result.error.message}`);
+      setError(`Could not save: ${result.error.message}`);
     } else {
       setForm(null);
       await load();
@@ -85,9 +85,9 @@ export default function AdminEras() {
   }
 
   async function remove(e: Era) {
-    if (!window.confirm(`Apagar a era «${e.name}»? Os vídeos dela ficam sem era.`)) return;
+    if (!window.confirm(`Delete the “${e.name}” era? Its videos will be left without an era.`)) return;
     const { error } = await getBrowserClient().from("eras").delete().eq("slug", e.slug);
-    if (error) setError(`Não apagou: ${error.message}`);
+    if (error) setError(`Could not delete: ${error.message}`);
     else await load();
   }
 
@@ -97,7 +97,7 @@ export default function AdminEras() {
         <h1 className="font-display text-4xl chrome-text">Eras</h1>
         {!form && (
           <button className={btnCls} onClick={() => setForm(empty)}>
-            + Nova era
+            + New era
           </button>
         )}
       </div>
@@ -108,7 +108,7 @@ export default function AdminEras() {
         <form onSubmit={save} className="mt-6 rounded-lg border border-line bg-surface p-6">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-              <label htmlFor="e-name" className={labelCls}>Nome</label>
+              <label htmlFor="e-name" className={labelCls}>Name</label>
               <input id="e-name" required className={inputCls} value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="MAYHEM" />
             </div>
@@ -118,22 +118,22 @@ export default function AdminEras() {
                 onChange={(e) => setForm({ ...form, slug: e.target.value })} placeholder="mayhem" />
             </div>
             <div>
-              <label htmlFor="e-years" className={labelCls}>Anos</label>
+              <label htmlFor="e-years" className={labelCls}>Years</label>
               <input id="e-years" className={inputCls} value={form.years}
-                onChange={(e) => setForm({ ...form, years: e.target.value })} placeholder="2025 – hoje" />
+                onChange={(e) => setForm({ ...form, years: e.target.value })} placeholder="2025 – now" />
             </div>
             <div>
-              <label htmlFor="e-sort" className={labelCls}>Ordem</label>
+              <label htmlFor="e-sort" className={labelCls}>Order</label>
               <input id="e-sort" type="number" className={inputCls} value={form.sort}
                 onChange={(e) => setForm({ ...form, sort: Number(e.target.value) })} />
             </div>
             <div className="md:col-span-2">
-              <label htmlFor="e-desc" className={labelCls}>Descrição</label>
+              <label htmlFor="e-desc" className={labelCls}>Description</label>
               <textarea id="e-desc" rows={3} className={inputCls} value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })} />
             </div>
             <div>
-              <label htmlFor="e-accent" className={labelCls}>Cor da era</label>
+              <label htmlFor="e-accent" className={labelCls}>Era color</label>
               <div className="flex items-center gap-3">
                 <input id="e-accent" type="color" value={form.accent}
                   onChange={(e) => setForm({ ...form, accent: e.target.value })}
@@ -142,7 +142,7 @@ export default function AdminEras() {
               </div>
             </div>
             <div>
-              <label htmlFor="e-img" className={labelCls}>Imagem de fundo (opcional)</label>
+              <label htmlFor="e-img" className={labelCls}>Background image (optional)</label>
               <input id="e-img" type="url" className={inputCls} value={form.image_url}
                 onChange={(e) => setForm({ ...form, image_url: e.target.value })}
                 placeholder="https://…/era.jpg" />
@@ -150,10 +150,10 @@ export default function AdminEras() {
           </div>
           <div className="mt-6 flex gap-3">
             <button type="submit" disabled={busy} className={btnCls}>
-              {busy ? "A gravar…" : form.original_slug ? "Gravar alterações" : "Criar era"}
+              {busy ? "Saving…" : form.original_slug ? "Save changes" : "Create era"}
             </button>
             <button type="button" className={btnGhostCls} onClick={() => setForm(null)}>
-              Cancelar
+              Cancel
             </button>
           </div>
         </form>
@@ -167,16 +167,16 @@ export default function AdminEras() {
               <p className="truncate text-sm font-medium">{e.name}</p>
               <p className="truncate text-xs text-muted">{e.years} · /eras/{e.slug}</p>
             </div>
-            <button className={btnGhostCls} onClick={() => edit(e)}>Editar</button>
+            <button className={btnGhostCls} onClick={() => edit(e)}>Edit</button>
             <button
               className="rounded-md border border-line px-3 py-2 text-sm text-muted transition-colors hover:border-accent hover:text-accent"
               onClick={() => remove(e)}
             >
-              Apagar
+              Delete
             </button>
           </li>
         ))}
-        {eras.length === 0 && <li className="p-6 text-sm text-muted">Ainda sem eras.</li>}
+        {eras.length === 0 && <li className="p-6 text-sm text-muted">No eras yet.</li>}
       </ul>
     </div>
   );

@@ -5,8 +5,8 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Timeline — GAGAFLIX" };
 
 const monthNames = [
-  "Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
-  "Jul", "Ago", "Set", "Out", "Nov", "Dez",
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
 function formatDate(iso: string) {
@@ -23,7 +23,7 @@ export default async function TimelinePage() {
   return (
     <div className="mx-auto max-w-3xl px-4 pb-20 pt-28 sm:px-6">
       <h1 className="font-display text-5xl chrome-text sm:text-6xl">Timeline</h1>
-      <p className="mt-3 text-muted">2008 → hoje. A história, marco a marco.</p>
+      <p className="mt-3 text-muted">2008 → today. The story, milestone by milestone.</p>
 
       <ol className="relative mt-12 border-l border-line pl-8">
         {moments.map((m) => {

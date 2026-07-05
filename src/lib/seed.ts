@@ -1,8 +1,8 @@
 import type { Era, TimelineMoment, Video } from "./types";
 
 /**
- * Conteúdo de arranque — usado quando o Supabase ainda não está configurado,
- * para o site funcionar desde o primeiro dia. O conteúdo real é gerido no /admin.
+ * Starter content — used while Supabase isn't configured yet,
+ * so the site works from day one. Real content is managed in /admin.
  */
 
 export const seedEras: Era[] = [
@@ -11,7 +11,7 @@ export const seedEras: Era[] = [
     name: "The Fame",
     years: "2008 – 2010",
     description:
-      "O nascimento do fenómeno: The Fame e The Fame Monster transformam Stefani Germanotta em Lady Gaga e o pop nunca mais foi o mesmo.",
+      "The birth of the phenomenon: The Fame and The Fame Monster turn Stefani Germanotta into Lady Gaga, and pop music is never the same again.",
     accent: "#d4af37",
     image_url: null,
     sort: 1,
@@ -21,7 +21,7 @@ export const seedEras: Era[] = [
     name: "Born This Way",
     years: "2011 – 2012",
     description:
-      "Couro, metal e um hino de liberdade. A era que fundou a nação Little Monster e levou o Monster Ball ao mundo inteiro.",
+      "Leather, metal and an anthem of freedom. The era that founded the Little Monster nation and took the Monster Ball around the world.",
     accent: "#9fb4c7",
     image_url: null,
     sort: 2,
@@ -31,7 +31,7 @@ export const seedEras: Era[] = [
     name: "ARTPOP",
     years: "2013 – 2015",
     description:
-      "Pop como arte, arte como pop. A era mais experimental e incompreendida — e por isso mesmo adorada pelos fãs.",
+      "Pop as art, art as pop. The most experimental and misunderstood era — and exactly for that reason, beloved by the fans.",
     accent: "#a6e22e",
     image_url: null,
     sort: 3,
@@ -41,7 +41,7 @@ export const seedEras: Era[] = [
     name: "Joanne",
     years: "2016 – 2017",
     description:
-      "O chapéu rosa, a alma a descoberto e o Super Bowl LI. A era mais íntima de Gaga, dedicada à tia Joanne.",
+      "The pink hat, a soul laid bare, and Super Bowl LI. Gaga's most intimate era, dedicated to her aunt Joanne.",
     accent: "#e8a798",
     image_url: null,
     sort: 4,
@@ -51,7 +51,7 @@ export const seedEras: Era[] = [
     name: "A Star Is Born",
     years: "2018 – 2019",
     description:
-      "Ally, Bradley Cooper e um Óscar para 'Shallow'. Gaga conquista Hollywood e prova que não há palco que não domine.",
+      "Ally, Bradley Cooper and an Oscar for 'Shallow'. Gaga conquers Hollywood and proves there is no stage she can't own.",
     accent: "#c98a4b",
     image_url: null,
     sort: 5,
@@ -61,7 +61,7 @@ export const seedEras: Era[] = [
     name: "Chromatica",
     years: "2020 – 2022",
     description:
-      "Rosa choque, cromados e dance-pop curativo. Do lançamento em plena pandemia à Chromatica Ball pelos estádios do mundo.",
+      "Hot pink, chrome and healing dance-pop. From a mid-pandemic release to the Chromatica Ball across the world's stadiums.",
     accent: "#ff3e9a",
     image_url: null,
     sort: 6,
@@ -71,7 +71,7 @@ export const seedEras: Era[] = [
     name: "Harlequin",
     years: "2024",
     description:
-      "Lee Quinzel canta os clássicos. O álbum-companheiro de Joker: Folie à Deux mostra a Gaga jazz no seu registo mais teatral.",
+      "Lee Quinzel sings the classics. The companion album to Joker: Folie à Deux shows jazz Gaga at her most theatrical.",
     accent: "#c8102e",
     image_url: null,
     sort: 7,
@@ -79,9 +79,9 @@ export const seedEras: Era[] = [
   {
     slug: "mayhem",
     name: "MAYHEM",
-    years: "2025 – hoje",
+    years: "2025 – now",
     description:
-      "O regresso ao pop escuro e cru. Abracadabra, Disease, o headline histórico de Coachella e a era chrome-gothic que dá a cara a este site.",
+      "The return to dark, raw pop. Abracadabra, Disease, the historic Coachella headline and the chrome-gothic era this site is dressed in.",
     accent: "#e04e20",
     image_url: null,
     sort: 8,
@@ -137,19 +137,19 @@ const t = (
 ): TimelineMoment => ({ id, date, title, body, era_slug, image_url: null });
 
 export const seedTimeline: TimelineMoment[] = [
-  t("fame-release", "2008-08-19", "The Fame", "O álbum de estreia apresenta Lady Gaga ao mundo. Just Dance e Poker Face conquistam o nº 1 em dezenas de países.", "the-fame"),
-  t("fame-monster", "2009-11-18", "The Fame Monster", "Bad Romance chega com o vídeo mais icónico da década e o Monster Ball arranca.", "the-fame"),
-  t("meat-dress", "2010-09-12", "O vestido de carne", "Nos VMAs, Gaga recebe o prémio de Video of the Year vestida de… carne. A cultura pop nunca recuperou.", "the-fame"),
-  t("btw-release", "2011-05-23", "Born This Way", "Um hino de aceitação vendido em milhões: a era que deu nome aos Little Monsters e à Born This Way Foundation.", "born-this-way"),
-  t("artpop-release", "2013-11-06", "ARTPOP", "Gaga funde música, tecnologia e arte performativa — com direito a voo em vestido drone no artRAVE.", "artpop"),
-  t("oscars-som", "2015-02-22", "Tributo a Sound of Music", "Nos Óscares, Gaga silencia os céticos com um tributo a Julie Andrews que relança a sua carreira vocal.", "artpop"),
-  t("joanne-release", "2016-10-21", "Joanne", "O registo mais pessoal, dedicado à tia Joanne. Million Reasons torna-se um clássico instantâneo.", "joanne"),
-  t("super-bowl", "2017-02-05", "Super Bowl LI Halftime", "Do telhado do estádio para a história: um dos halftime shows mais aclamados de sempre.", "joanne"),
-  t("asib-premiere", "2018-10-05", "A Star Is Born", "Ally nasce. O filme com Bradley Cooper é um fenómeno global de bilheteira e crítica.", "a-star-is-born"),
-  t("oscar-shallow", "2019-02-24", "Óscar por Shallow", "Melhor Canção Original — e aquele dueto ao piano com Bradley Cooper que parou o mundo.", "a-star-is-born"),
-  t("chromatica-release", "2020-05-29", "Chromatica", "Dance-pop como cura em plena pandemia. Rain On Me dá a Gaga mais um nº 1 global.", "chromatica"),
-  t("chromatica-ball", "2022-07-17", "The Chromatica Ball", "A digressão de estádios finalmente acontece — brutalista, teatral e inesquecível.", "chromatica"),
-  t("harlequin-release", "2024-09-27", "Harlequin", "O álbum-companheiro de Joker: Folie à Deux revisita clássicos pela lente de Lee Quinzel.", "harlequin"),
-  t("mayhem-release", "2025-03-07", "MAYHEM", "O regresso ao pop escuro. Abracadabra e Disease dominam as tabelas e a estética chrome-gothic define a era.", "mayhem"),
-  t("coachella-2025", "2025-04-11", "Coachella: The Art of Personal Chaos", "Um headline histórico de duas horas que os fãs (e a crítica) colocam entre os melhores de sempre do festival.", "mayhem"),
+  t("fame-release", "2008-08-19", "The Fame", "The debut album introduces Lady Gaga to the world. Just Dance and Poker Face hit #1 in dozens of countries.", "the-fame"),
+  t("fame-monster", "2009-11-18", "The Fame Monster", "Bad Romance arrives with the most iconic video of the decade, and the Monster Ball begins.", "the-fame"),
+  t("meat-dress", "2010-09-12", "The meat dress", "At the VMAs, Gaga accepts Video of the Year dressed in… meat. Pop culture never recovered.", "the-fame"),
+  t("btw-release", "2011-05-23", "Born This Way", "An anthem of acceptance selling millions: the era that named the Little Monsters and the Born This Way Foundation.", "born-this-way"),
+  t("artpop-release", "2013-11-06", "ARTPOP", "Gaga fuses music, technology and performance art — flying drone dress at the artRAVE included.", "artpop"),
+  t("oscars-som", "2015-02-22", "The Sound of Music tribute", "At the Oscars, Gaga silences the skeptics with a Julie Andrews tribute that relaunches her vocal career.", "artpop"),
+  t("joanne-release", "2016-10-21", "Joanne", "Her most personal record, dedicated to her aunt Joanne. Million Reasons becomes an instant classic.", "joanne"),
+  t("super-bowl", "2017-02-05", "Super Bowl LI Halftime", "From the stadium roof into history: one of the most acclaimed halftime shows of all time.", "joanne"),
+  t("asib-premiere", "2018-10-05", "A Star Is Born", "Ally is born. The film with Bradley Cooper becomes a global box-office and critical phenomenon.", "a-star-is-born"),
+  t("oscar-shallow", "2019-02-24", "Oscar for Shallow", "Best Original Song — and that piano duet with Bradley Cooper that stopped the world.", "a-star-is-born"),
+  t("chromatica-release", "2020-05-29", "Chromatica", "Dance-pop as healing in the middle of a pandemic. Rain On Me hands Gaga another global #1.", "chromatica"),
+  t("chromatica-ball", "2022-07-17", "The Chromatica Ball", "The stadium tour finally happens — brutalist, theatrical and unforgettable.", "chromatica"),
+  t("harlequin-release", "2024-09-27", "Harlequin", "The companion album to Joker: Folie à Deux revisits the classics through the lens of Lee Quinzel.", "harlequin"),
+  t("mayhem-release", "2025-03-07", "MAYHEM", "The return to dark pop. Abracadabra and Disease dominate the charts, and the chrome-gothic aesthetic defines the era.", "mayhem"),
+  t("coachella-2025", "2025-04-11", "Coachella: The Art of Personal Chaos", "A historic two-hour headline set that fans (and critics) rank among the festival's greatest ever.", "mayhem"),
 ];

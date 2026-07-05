@@ -67,7 +67,7 @@ export default function AdminTimeline() {
       ? await supabase.from("timeline_moments").update(payload).eq("id", form.id)
       : await supabase.from("timeline_moments").insert(payload);
     if (result.error) {
-      setError(`Não gravou: ${result.error.message}`);
+      setError(`Could not save: ${result.error.message}`);
     } else {
       setForm(null);
       await load();
@@ -76,9 +76,9 @@ export default function AdminTimeline() {
   }
 
   async function remove(m: TimelineMoment) {
-    if (!window.confirm(`Apagar «${m.title}» da timeline?`)) return;
+    if (!window.confirm(`Remove “${m.title}” from the timeline?`)) return;
     const { error } = await getBrowserClient().from("timeline_moments").delete().eq("id", m.id);
-    if (error) setError(`Não apagou: ${error.message}`);
+    if (error) setError(`Could not delete: ${error.message}`);
     else await load();
   }
 
@@ -88,7 +88,7 @@ export default function AdminTimeline() {
         <h1 className="font-display text-4xl chrome-text">Timeline</h1>
         {!form && (
           <button className={btnCls} onClick={() => setForm(empty)}>
-            + Novo marco
+            + New milestone
           </button>
         )}
       </div>
@@ -99,7 +99,7 @@ export default function AdminTimeline() {
         <form onSubmit={save} className="mt-6 rounded-lg border border-line bg-surface p-6">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-              <label htmlFor="t-date" className={labelCls}>Data</label>
+              <label htmlFor="t-date" className={labelCls}>Date</label>
               <input id="t-date" required type="date" className={inputCls} value={form.date}
                 onChange={(e) => setForm({ ...form, date: e.target.value })} />
             </div>
@@ -107,36 +107,36 @@ export default function AdminTimeline() {
               <label htmlFor="t-era" className={labelCls}>Era</label>
               <select id="t-era" className={inputCls} value={form.era_slug}
                 onChange={(e) => setForm({ ...form, era_slug: e.target.value })}>
-                <option value="">— sem era —</option>
+                <option value="">— no era —</option>
                 {eras.map((er) => (
                   <option key={er.slug} value={er.slug}>{er.name}</option>
                 ))}
               </select>
             </div>
             <div className="md:col-span-2">
-              <label htmlFor="t-title" className={labelCls}>Título</label>
+              <label htmlFor="t-title" className={labelCls}>Title</label>
               <input id="t-title" required className={inputCls} value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
                 placeholder="Coachella: The Art of Personal Chaos" />
             </div>
             <div className="md:col-span-2">
-              <label htmlFor="t-body" className={labelCls}>Texto</label>
+              <label htmlFor="t-body" className={labelCls}>Text</label>
               <textarea id="t-body" rows={3} className={inputCls} value={form.body}
                 onChange={(e) => setForm({ ...form, body: e.target.value })} />
             </div>
             <div className="md:col-span-2">
-              <label htmlFor="t-img" className={labelCls}>Imagem (opcional)</label>
+              <label htmlFor="t-img" className={labelCls}>Image (optional)</label>
               <input id="t-img" type="url" className={inputCls} value={form.image_url}
                 onChange={(e) => setForm({ ...form, image_url: e.target.value })}
-                placeholder="https://…/momento.jpg" />
+                placeholder="https://…/moment.jpg" />
             </div>
           </div>
           <div className="mt-6 flex gap-3">
             <button type="submit" disabled={busy} className={btnCls}>
-              {busy ? "A gravar…" : form.id ? "Gravar alterações" : "Adicionar marco"}
+              {busy ? "Saving…" : form.id ? "Save changes" : "Add milestone"}
             </button>
             <button type="button" className={btnGhostCls} onClick={() => setForm(null)}>
-              Cancelar
+              Cancel
             </button>
           </div>
         </form>
@@ -153,16 +153,16 @@ export default function AdminTimeline() {
               <p className="truncate text-sm font-medium">{m.title}</p>
               <p className="truncate text-xs text-muted">{m.date}</p>
             </div>
-            <button className={btnGhostCls} onClick={() => edit(m)}>Editar</button>
+            <button className={btnGhostCls} onClick={() => edit(m)}>Edit</button>
             <button
               className="rounded-md border border-line px-3 py-2 text-sm text-muted transition-colors hover:border-accent hover:text-accent"
               onClick={() => remove(m)}
             >
-              Apagar
+              Delete
             </button>
           </li>
         ))}
-        {moments.length === 0 && <li className="p-6 text-sm text-muted">Ainda sem marcos.</li>}
+        {moments.length === 0 && <li className="p-6 text-sm text-muted">No milestones yet.</li>}
       </ul>
     </div>
   );
