@@ -5,6 +5,10 @@ export type SourceKind =
   | "vimeo"
   | "dailymotion"
   | "twitter"
+  | "gdrive"
+  | "streamable"
+  | "archive"
+  | "facebook"
   | "file"
   | "embed";
 
@@ -44,7 +48,24 @@ export function parseSource(url: string): ParsedSource {
   const tw = u.match(/(?:twitter\.com|x\.com)\/\w+\/status\/(\d+)/);
   if (tw) return { kind: "twitter", id: tw[1], url: u };
 
-  if (/\.(mp4|webm|ogv|m3u8|mov)(\?.*)?$/i.test(u)) {
+  // Google Drive — ótimo para conteúdo raro alojado por fãs
+  const gd =
+    u.match(/drive\.google\.com\/file\/d\/([\w-]+)/) ||
+    u.match(/drive\.google\.com\/open\?id=([\w-]+)/) ||
+    u.match(/drive\.google\.com\/uc\?(?:.*&)?id=([\w-]+)/);
+  if (gd) return { kind: "gdrive", id: gd[1], url: u };
+
+  const st = u.match(/streamable\.com\/(?:e\/)?([\w]+)/);
+  if (st) return { kind: "streamable", id: st[1], url: u };
+
+  const ar = u.match(/archive\.org\/(?:details|embed)\/([^/?#]+)/);
+  if (ar) return { kind: "archive", id: ar[1], url: u };
+
+  if (/facebook\.com\/.+\/videos\/|fb\.watch\//.test(u)) {
+    return { kind: "facebook", id: null, url: u };
+  }
+
+  if (/\.(mp4|webm|ogv|m3u8|mov|mkv)(\?.*)?$/i.test(u)) {
     return { kind: "file", id: null, url: u };
   }
 

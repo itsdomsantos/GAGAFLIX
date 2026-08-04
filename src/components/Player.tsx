@@ -5,7 +5,8 @@ import { parseSource } from "@/lib/player";
 
 /**
  * O Player Camaleão: olha para o link do vídeo e carrega o player certo —
- * YouTube, Vimeo, Dailymotion, X/Twitter, ficheiro direto (MP4/HLS) ou iframe genérico.
+ * YouTube, Vimeo, Dailymotion, X/Twitter, Google Drive, Streamable, Archive.org,
+ * Facebook, ficheiro direto (MP4/HLS) ou iframe genérico.
  */
 export default function Player({ url, title }: { url: string; title: string }) {
   const source = parseSource(url);
@@ -23,6 +24,23 @@ export default function Player({ url, title }: { url: string; title: string }) {
     case "dailymotion":
       return (
         <Frame src={`https://www.dailymotion.com/embed/video/${source.id}`} title={title} />
+      );
+    case "gdrive":
+      return (
+        <Frame src={`https://drive.google.com/file/d/${source.id}/preview`} title={title} />
+      );
+    case "streamable":
+      return <Frame src={`https://streamable.com/e/${source.id}`} title={title} />;
+    case "archive":
+      return <Frame src={`https://archive.org/embed/${source.id}`} title={title} />;
+    case "facebook":
+      return (
+        <Frame
+          src={`https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(
+            source.url,
+          )}&show_text=false`}
+          title={title}
+        />
       );
     case "twitter":
       return (

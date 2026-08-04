@@ -36,6 +36,7 @@ export default function AdminVideos() {
   const [form, setForm] = useState<FormState | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
 
   const load = useCallback(async () => {
     const supabase = getBrowserClient();
@@ -107,6 +108,25 @@ export default function AdminVideos() {
     : null;
   const sourceKind = form && form.url ? parseSource(form.url).kind : null;
 
+  const q = query.trim().toLowerCase();
+  const shown = q
+    ? videos.filter((v) => {
+        const eraName = v.era_slug
+          ? eras.find((e) => e.slug === v.era_slug)?.name ?? v.era_slug
+          : "";
+        const haystack = [
+          v.title,
+          v.event ?? "",
+          eraName,
+          VIDEO_TYPE_LABELS[v.type],
+          v.date ?? "",
+        ]
+          .join(" ")
+          .toLowerCase();
+        return q.split(/\s+/).every((term) => haystack.includes(term));
+      })
+    : videos;
+
   return (
     <div>
       <div className="flex items-center justify-between gap-4">
@@ -135,7 +155,7 @@ export default function AdminVideos() {
               </label>
               <input id="v-url" required type="url" className={inputCls} value={form.url}
                 onChange={(e) => setForm({ ...form, url: e.target.value })}
-                placeholder="https://www.youtube.com/watch?v=… · dailymotion · vimeo · x.com · .mp4 · .m3u8" />
+                placeholder="youtube · dailymotion · vimeo · x.com · drive.google · streamable · archive.org · facebook · .mp4 · .m3u8" />
             </div>
             <div>
               <label htmlFor="v-type" className={labelCls}>Type</label>
@@ -197,8 +217,23 @@ export default function AdminVideos() {
         </form>
       )}
 
-      <ul className="mt-8 divide-y divide-line rounded-lg border border-line bg-surface">
-        {videos.map((v) => {
+      {!form && videos.length > 0 && (
+        <div className="mt-8 flex items-center gap-3">
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search videos — title, event, era, year…"
+            className={inputCls}
+          />
+          <span className="shrink-0 text-xs text-muted tabular-nums">
+            {shown.length}/{videos.length}
+          </span>
+        </div>
+      )}
+
+      <ul className="mt-4 divide-y divide-line rounded-lg border border-line bg-surface">
+        {shown.map((v) => {
           const thumb = autoThumbnail(v);
           return (
             <li key={v.id} className="flex items-center gap-4 p-3">
@@ -231,6 +266,9 @@ export default function AdminVideos() {
         })}
         {videos.length === 0 && (
           <li className="p-6 text-sm text-muted">No videos yet — hit “+ New video” and paste your first link. 🐾</li>
+        )}
+        {videos.length > 0 && shown.length === 0 && (
+          <li className="p-6 text-sm text-muted">No videos match “{query}”.</li>
         )}
       </ul>
     </div>
