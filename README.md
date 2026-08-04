@@ -77,7 +77,21 @@ Para testar localmente: copia `.env.example` para `.env.local` e cola lá os val
 2. A Vercel mostra-te os registos DNS a configurar no teu registrar do domínio
 3. Aponta-os, espera uns minutos, e o GAGAFLIX está em casa 🏠
 
-### 6. Logo
+### 6. (Opcional) Importar playlists do YouTube
+
+A ferramenta `/admin/import` funciona logo para colar links soltos (busca título e
+thumbnail sozinha, sem chave). Para importar uma **playlist ou canal inteiro**, precisas
+de uma chave grátis da YouTube Data API:
+
+1. Vai a [console.cloud.google.com](https://console.cloud.google.com) → cria um projeto
+2. **APIs & Services → Library** → ativa **YouTube Data API v3**
+3. **APIs & Services → Credentials → Create credentials → API key** → copia a chave
+4. Na Vercel: **Settings → Environment Variables** → adiciona
+   `YOUTUBE_API_KEY` = a chave (sem `NEXT_PUBLIC_`, fica só no servidor) → **Redeploy**
+
+Colar links individuais continua a funcionar sem esta chave.
+
+### 7. Logo
 
 Adiciona os ficheiros do teu logo flame a `public/`:
 
