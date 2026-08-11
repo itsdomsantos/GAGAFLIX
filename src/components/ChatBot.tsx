@@ -18,27 +18,49 @@ const SUGGESTIONS = [
   "Chromatica era trivia",
 ];
 
-/** Torna clicáveis os /watch/<id> e links markdown que o bot devolve. */
-function renderText(text: string) {
-  const parts: React.ReactNode[] = [];
+const LINK_CLS = "text-accent underline underline-offset-2";
+
+function linkNode(href: string, label: string, key: string) {
+  if (href.startsWith("/")) {
+    return (
+      <Link key={key} href={href} className={LINK_CLS}>
+        {label}
+      </Link>
+    );
+  }
+  return (
+    <a key={key} href={href} target="_blank" rel="noopener noreferrer" className={LINK_CLS}>
+      {label}
+    </a>
+  );
+}
+
+/**
+ * Render leve de markdown inline nas respostas do bot: links [txt](url),
+ * /watch/<id> soltos, **negrito** e *itálico*. Sem dependências.
+ */
+function renderInline(text: string, prefix = "") {
+  const nodes: React.ReactNode[] = [];
   const regex =
-    /\[([^\]]+)\]\((\/watch\/[\w-]+)\)|(\/watch\/[\w-]+)/g;
+    /\[([^\]]+)\]\((https?:\/\/[^\s)]+|\/[^\s)]+)\)|\*\*([^*]+)\*\*|(?<!\w)\*([^*\n]+)\*(?!\w)|(\/watch\/[\w-]+)/g;
   let last = 0;
-  let key = 0;
+  let k = 0;
   let m: RegExpExecArray | null;
   while ((m = regex.exec(text)) !== null) {
-    if (m.index > last) parts.push(text.slice(last, m.index));
-    const href = m[2] ?? m[3];
-    const label = m[1] ?? m[3];
-    parts.push(
-      <Link key={key++} href={href} className="text-accent underline underline-offset-2">
-        {label}
-      </Link>,
-    );
+    if (m.index > last) nodes.push(text.slice(last, m.index));
+    if (m[1] !== undefined && m[2] !== undefined) {
+      nodes.push(linkNode(m[2], m[1], `${prefix}${k++}`));
+    } else if (m[3] !== undefined) {
+      nodes.push(<strong key={`${prefix}${k++}`}>{m[3]}</strong>);
+    } else if (m[4] !== undefined) {
+      nodes.push(<em key={`${prefix}${k++}`}>{m[4]}</em>);
+    } else if (m[5] !== undefined) {
+      nodes.push(linkNode(m[5], m[5], `${prefix}${k++}`));
+    }
     last = regex.lastIndex;
   }
-  if (last < text.length) parts.push(text.slice(last));
-  return parts;
+  if (last < text.length) nodes.push(text.slice(last));
+  return nodes;
 }
 
 export default function ChatBot() {
@@ -170,7 +192,7 @@ export default function ChatBot() {
                     <Dot /> <Dot /> <Dot />
                   </span>
                 ) : (
-                  renderText(m.text)
+                  renderInline(m.text, `${i}-`)
                 )}
               </Bubble>
             ))}

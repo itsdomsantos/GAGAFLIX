@@ -88,6 +88,22 @@ export async function POST(req: Request) {
       const reader = geminiRes.body!.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
+
+      const emit = (line: string) => {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith("data:")) return;
+        const data = trimmed.slice(5).trim();
+        if (!data || data === "[DONE]") return;
+        try {
+          const json = JSON.parse(data) as GeminiChunk;
+          const text =
+            json.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
+          if (text) controller.enqueue(encoder.encode(text));
+        } catch {
+          // chunk parcial — junta no próximo read
+        }
+      };
+
       try {
         for (;;) {
           const { done, value } = await reader.read();
@@ -95,23 +111,14 @@ export async function POST(req: Request) {
           buffer += decoder.decode(value, { stream: true });
           const lines = buffer.split("\n");
           buffer = lines.pop() ?? "";
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed.startsWith("data:")) continue;
-            const data = trimmed.slice(5).trim();
-            if (!data || data === "[DONE]") continue;
-            try {
-              const json = JSON.parse(data) as GeminiChunk;
-              const text =
-                json.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
-              if (text) controller.enqueue(encoder.encode(text));
-            } catch {
-              // chunk parcial — junta no próximo read
-            }
-          }
+          for (const line of lines) emit(line);
         }
+        // Despeja o último pedaço: o evento final pode não trazer newline,
+        // e sem isto a resposta cortava a meio (links incluídos).
+        buffer += decoder.decode();
+        if (buffer.trim()) emit(buffer);
       } catch {
-        controller.enqueue(encoder.encode("\n\n⚠️ A ligação foi interrompida."));
+        controller.enqueue(encoder.encode("\n\n⚠️ Connection interrupted."));
       } finally {
         controller.close();
       }
