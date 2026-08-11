@@ -10,12 +10,12 @@ interface Msg {
 }
 
 const GREETING =
-  "Paws up, Little Monster! 🐾 Pergunta-me o que quiseres sobre a Gaga — eras, performances, curiosidades — ou pede que te recomende um vídeo do GAGAFLIX. ✨";
+  "Paws up, Little Monster! 🐾 Ask me anything about Gaga — eras, performances, trivia — or ask me to recommend a video from GAGAFLIX. ✨";
 
 const SUGGESTIONS = [
-  "O que foi o Coachella 2025?",
-  "Recomenda-me um videoclipe icónico",
-  "Curiosidades da era Chromatica",
+  "What was Coachella 2025?",
+  "Recommend an iconic music video",
+  "Chromatica era trivia",
 ];
 
 /** Torna clicáveis os /watch/<id> e links markdown que o bot devolve. */
@@ -89,7 +89,7 @@ export default function ChatBot() {
         const copy = [...prev];
         copy[copy.length - 1] = {
           role: "model",
-          text: "Oops, Little Monster — algo correu mal. Tenta outra vez daqui a pouco. 🐾",
+          text: "Oops, Little Monster — something went wrong. Try again in a moment. 🐾",
         };
         return copy;
       });
@@ -103,7 +103,7 @@ export default function ChatBot() {
       {/* Bola flutuante */}
       <button
         onClick={() => setOpen((o) => !o)}
-        aria-label={open ? "Fechar chat" : "Abrir chat"}
+        aria-label={open ? "Close chat" : "Open chat"}
         className="fixed bottom-20 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-black shadow-[0_0_28px_-4px_var(--accent)] transition-transform hover:scale-105 md:bottom-6 md:right-6"
       >
         {open ? (
@@ -129,11 +129,11 @@ export default function ChatBot() {
             </span>
             <div className="min-w-0">
               <p className="font-display text-lg leading-none chrome-text">GAGAFLIX</p>
-              <p className="text-[11px] text-muted">o teu assistente Little Monster</p>
+              <p className="text-[11px] text-muted">your Little Monster assistant</p>
             </div>
             <button
               onClick={() => setOpen(false)}
-              aria-label="Fechar"
+              aria-label="Close"
               className="ml-auto text-muted transition-colors hover:text-text"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -182,13 +182,13 @@ export default function ChatBot() {
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Escreve à Mother Monster…"
+              placeholder="Ask Mother Monster…"
               className="min-w-0 flex-1 rounded-full border border-line bg-surface-2 px-4 py-2 text-sm outline-none transition-colors placeholder:text-muted focus:border-accent"
             />
             <button
               type="submit"
               disabled={busy || !input.trim()}
-              aria-label="Enviar"
+              aria-label="Send"
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-black transition-transform hover:scale-105 disabled:opacity-40"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
