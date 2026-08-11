@@ -4,8 +4,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
-// Modelo configurável por env (sobe para gemini-2.5-flash sem mexer no código).
-const MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+// Modelo configurável por env — se um dia for descontinuado, troca-se
+// GEMINI_MODEL na Vercel sem mexer no código nem fazer novo commit.
+const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
 interface IncomingMessage {
   role?: string;
