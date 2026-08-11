@@ -1,0 +1,31 @@
+name: Supabase keep-alive
+
+# Mantém o projeto Supabase (plano grátis) fora do estado "paused":
+# uma vez por dia faz um SELECT minúsculo à API REST, o que conta como
+# atividade e reinicia o relógio de inatividade de 7 dias.
+
+on:
+  schedule:
+    # 06:17 UTC diariamente. Minuto ímpar de propósito: crons "à hora certa"
+    # no GitHub costumam ficar em fila e atrasar-se — fugir do :00 reduz isso.
+    - cron: "17 6 * * *"
+  workflow_dispatch: {} # permite correr à mão no separador Actions
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          # Lê 1 linha da tabela pública "eras". A leitura pública é permitida
+          # pela política RLS, por isso a anon key chega — não expomos nada.
+          code=$(curl -sS -o /dev/null -w "%{http_code}" \
+            "${SUPABASE_URL}/rest/v1/eras?select=slug&limit=1" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}")
+          echo "Supabase respondeu HTTP $code"
+          # Falha o job (fica vermelho + email do GitHub) se não vier 200.
+          test "$code" = "200"
