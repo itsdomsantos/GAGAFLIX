@@ -69,7 +69,10 @@ export default function ChatBot() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ messages: history }),
       });
-      if (!res.ok || !res.body) throw new Error(await res.text().catch(() => "error"));
+      if (!res.ok || !res.body) {
+        const detail = await res.text().catch(() => "");
+        throw new Error(detail || `HTTP ${res.status}`);
+      }
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -84,12 +87,13 @@ export default function ChatBot() {
           return copy;
         });
       }
-    } catch {
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : "";
       setMessages((prev) => {
         const copy = [...prev];
         copy[copy.length - 1] = {
           role: "model",
-          text: "Oops, Little Monster — something went wrong. Try again in a moment. 🐾",
+          text: `⚠️ ${detail ? detail.slice(0, 300) : "Something went wrong. Try again in a moment."} 🐾`,
         };
         return copy;
       });
