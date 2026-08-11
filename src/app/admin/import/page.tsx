@@ -6,6 +6,12 @@ import { parseSource, youtubeId } from "@/lib/player";
 import { getBrowserClient } from "@/lib/supabase";
 import { VIDEO_TYPES, VIDEO_TYPE_LABELS, type Era, type VideoType } from "@/lib/types";
 
+// Mesmo visual do inputCls mas SEM w-full — para selects de largura fixa numa
+// linha flex. Combinar inputCls (w-full) com w-32 criava um conflito de largura
+// que esmagava o campo do título e rebentava a linha para fora do ecrã.
+const selectCls =
+  "shrink-0 rounded-md border border-line bg-surface-2 px-3 py-2 text-sm outline-none transition-colors focus:border-accent";
+
 interface Row {
   url: string;
   title: string;
@@ -266,13 +272,13 @@ export default function AdminImport() {
                     <span className="text-accent">{r.kind}</span> · {r.url}
                   </p>
                 </div>
-                <select className={`${inputCls} w-32 shrink-0`} value={r.type}
+                <select className={`${selectCls} w-32 sm:w-40`} value={r.type}
                   onChange={(e) => updateRow(idx, { type: e.target.value as VideoType })}>
                   {VIDEO_TYPES.map((t) => (
                     <option key={t} value={t}>{VIDEO_TYPE_LABELS[t]}</option>
                   ))}
                 </select>
-                <select className={`${inputCls} w-36 shrink-0`} value={r.era_slug}
+                <select className={`${selectCls} w-32 sm:w-44`} value={r.era_slug}
                   onChange={(e) => updateRow(idx, { era_slug: e.target.value })}>
                   <option value="">— no era —</option>
                   {eras.map((er) => (
