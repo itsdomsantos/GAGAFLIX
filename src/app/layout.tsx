@@ -4,6 +4,7 @@ import "./globals.css";
 import Header from "@/components/Header";
 import BottomBar from "@/components/BottomBar";
 import KeyboardShortcuts from "@/components/KeyboardShortcuts";
+import ChatBot from "@/components/ChatBot";
 
 const archivo = Archivo({
   variable: "--font-archivo",
@@ -39,6 +40,7 @@ export default function RootLayout({
           original platform.
         </footer>
         <BottomBar />
+        <ChatBot />
       </body>
     </html>
   );
