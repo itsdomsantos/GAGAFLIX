@@ -52,9 +52,10 @@ export default function EraTransition() {
       clearTimers();
       els.forEach((el) => el.getAnimations().forEach((a) => a.cancel()));
 
-      // A cor pinta as tiras e o fundo (esconde costuras enquanto cobre).
+      // A cor pinta as TIRAS. O fundo fica transparente durante o "cobrir"
+      // para se verem as tiras a entrar sobre a página.
       container.style.setProperty("--era-veil", color);
-      container.style.background = color;
+      container.style.background = "transparent";
       container.style.pointerEvents = "auto";
 
       const animate = (reverse: boolean) =>
@@ -71,9 +72,12 @@ export default function EraTransition() {
       // Fase 1 — cobrir.
       animate(false);
 
-      // Fase 2 — navegar quando estiver coberto.
+      // Fase 2 — já coberto: pinta o fundo (véu cheio, sem falhas) e navega.
       timers.current.push(
-        setTimeout(() => router.push(href), COVER_TOTAL),
+        setTimeout(() => {
+          container.style.background = color;
+          router.push(href);
+        }, COVER_TOTAL),
       );
 
       // Fase 3 — revelar (o fundo deixa de cobrir; as tiras recolhem).
