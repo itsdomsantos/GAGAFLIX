@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { registerEraTransition } from "@/lib/eraTransition";
 
 /**
@@ -9,121 +9,97 @@ import { registerEraTransition } from "@/lib/eraTransition";
  *
  * Ao clicar num círculo do carrossel, várias tiras varrem o ecrã — as pares
  * descem do topo, as ímpares sobem de baixo — em cascata, até cobrir tudo.
- * Aí navegamos para a página da era e, quando ela está montada, as tiras
- * recolhem (o mesmo gesto ao contrário) revelando a nova página.
+ * Aí navegamos para a página da era e, logo depois, as tiras recolhem (o mesmo
+ * gesto ao contrário) revelando a nova página.
  *
- * O overlay vive no layout raiz, por isso sobrevive à navegação SPA — é o que
- * permite o gesto contínuo cobrir → revelar ("ida e volta").
+ * A sequência é orquestrada por TEMPORIZADORES (não depende de detetar o fim da
+ * navegação): mesmo que a navegação encrave, o véu desaparece sempre — nunca
+ * fica preso a cobrir o site.
  */
 const COUNT = 9; // nº de tiras
-const STAGGER = 40; // ms de atraso entre tiras (cascata)
-const DURATION = 380; // ms de cada tira
+const STAGGER = 34; // ms de atraso entre tiras (cascata)
+const DURATION = 360; // ms de cada tira
+const HOLD = 260; // ms coberto antes de revelar (deixa a nova página pintar)
 const EASE = "cubic-bezier(0.7, 0, 0.3, 1)";
+
+const COVER_TOTAL = (COUNT - 1) * STAGGER + DURATION;
 
 /** Posição fora-de-ecrã de cada tira: pares em cima, ímpares em baixo. */
 const offscreen = (i: number) => (i % 2 === 0 ? "-101%" : "101%");
 
 export default function EraTransition() {
   const router = useRouter();
-  const pathname = usePathname();
-
   const containerRef = useRef<HTMLDivElement>(null);
   const stripRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-  const covering = useRef(false);
-  const targetPath = useRef<string | null>(null);
-  const safety = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const strips = () =>
-    stripRefs.current.filter(Boolean) as HTMLDivElement[];
-
-  /** Fase 2: recolhe as tiras, revelando a nova página. */
-  const reveal = useCallback(() => {
-    covering.current = false;
-    targetPath.current = null;
-    if (safety.current) {
-      clearTimeout(safety.current);
-      safety.current = null;
-    }
-    const container = containerRef.current;
-    if (!container) return;
-    const els = strips();
-
-    // Pequena pausa para a nova página pintar por baixo antes de descobrir.
-    setTimeout(() => {
-      // O fundo do container deixa de cobrir — as tiras é que revelam.
-      container.style.background = "transparent";
-      const anims = els.map((el, i) =>
-        el.animate(
-          [{ transform: "translateY(0)" }, { transform: offscreen(i) }],
-          {
-            duration: DURATION,
-            delay: (els.length - 1 - i) * STAGGER,
-            easing: EASE,
-            fill: "forwards",
-          },
-        ),
-      );
-      Promise.all(anims.map((a) => a.finished))
-        .then(() => {
-          container.style.pointerEvents = "none";
-          els.forEach((el) => {
-            el.getAnimations().forEach((a) => a.cancel());
-          });
-        })
-        .catch(() => {});
-    }, 80);
-  }, []);
-
-  // Fase 1: regista o disparador (cobrir com as tiras).
   useEffect(() => {
-    return registerEraTransition(({ color, href }) => {
+    const clearTimers = () => {
+      timers.current.forEach(clearTimeout);
+      timers.current = [];
+    };
+
+    const unregister = registerEraTransition(({ color, href }) => {
       const container = containerRef.current;
-      if (!container) {
+      const els = stripRefs.current.filter(Boolean) as HTMLDivElement[];
+      if (!container || els.length === 0) {
         router.push(href);
         return;
       }
-      const els = strips();
+
+      // Recomeça do zero se já houver uma transição a decorrer.
+      clearTimers();
+      els.forEach((el) => el.getAnimations().forEach((a) => a.cancel()));
 
       // A cor pinta as tiras e o fundo (esconde costuras enquanto cobre).
       container.style.setProperty("--era-veil", color);
       container.style.background = color;
       container.style.pointerEvents = "auto";
 
-      covering.current = true;
-      targetPath.current = href;
+      const animate = (reverse: boolean) =>
+        els.forEach((el, i) => {
+          const from = reverse ? "translateY(0)" : offscreen(i);
+          const to = reverse ? offscreen(i) : "translateY(0)";
+          const delay = (reverse ? els.length - 1 - i : i) * STAGGER;
+          el.animate(
+            [{ transform: from }, { transform: to }],
+            { duration: DURATION, delay, easing: EASE, fill: "forwards" },
+          );
+        });
 
-      els.forEach((el) => el.getAnimations().forEach((a) => a.cancel()));
-      const anims = els.map((el, i) =>
-        el.animate(
-          [{ transform: offscreen(i) }, { transform: "translateY(0)" }],
-          { duration: DURATION, delay: i * STAGGER, easing: EASE, fill: "forwards" },
+      // Fase 1 — cobrir.
+      animate(false);
+
+      // Fase 2 — navegar quando estiver coberto.
+      timers.current.push(
+        setTimeout(() => router.push(href), COVER_TOTAL),
+      );
+
+      // Fase 3 — revelar (o fundo deixa de cobrir; as tiras recolhem).
+      timers.current.push(
+        setTimeout(() => {
+          container.style.background = "transparent";
+          animate(true);
+        }, COVER_TOTAL + HOLD),
+      );
+
+      // Fase 4 — limpar quando as tiras já saíram de cena.
+      timers.current.push(
+        setTimeout(
+          () => {
+            container.style.pointerEvents = "none";
+            els.forEach((el) => el.getAnimations().forEach((a) => a.cancel()));
+          },
+          COVER_TOTAL + HOLD + COVER_TOTAL,
         ),
       );
-      Promise.all(anims.map((a) => a.finished))
-        .then(() => {
-          router.push(href);
-          // Rede de segurança: se a navegação encravar, revela na mesma.
-          safety.current = setTimeout(() => {
-            if (covering.current) reveal();
-          }, 3500);
-        })
-        .catch(() => {});
     });
-  }, [router, reveal]);
 
-  // Fase 2: quando chegamos ao destino, revela.
-  useEffect(() => {
-    if (!covering.current) return;
-    if (targetPath.current && pathname !== targetPath.current) return;
-    reveal();
-  }, [pathname, reveal]);
-
-  useEffect(() => {
     return () => {
-      if (safety.current) clearTimeout(safety.current);
+      unregister();
+      clearTimers();
     };
-  }, []);
+  }, [router]);
 
   return (
     <div
