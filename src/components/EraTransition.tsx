@@ -25,7 +25,8 @@ const EASE = "cubic-bezier(0.7, 0, 0.3, 1)";
 const COVER_TOTAL = (COUNT - 1) * STAGGER + DURATION;
 
 /** Posição fora-de-ecrã de cada tira: pares em cima, ímpares em baixo. */
-const offscreen = (i: number) => (i % 2 === 0 ? "-101%" : "101%");
+const offscreen = (i: number) =>
+  i % 2 === 0 ? "translateY(-101%)" : "translateY(101%)";
 
 export default function EraTransition() {
   const router = useRouter();
