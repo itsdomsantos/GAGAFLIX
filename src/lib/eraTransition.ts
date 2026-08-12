@@ -6,10 +6,7 @@
  * era chama `playEraTransition` para o disparar a partir da posição do rato.
  */
 export type EraTransitionOpts = {
-  /** Posição de origem da onda (coordenadas do viewport). */
-  x: number;
-  y: number;
-  /** Cor da era — pinta a onda. */
+  /** Cor da era — pinta as tiras. */
   color: string;
   /** Destino da navegação. */
   href: string;
