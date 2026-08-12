@@ -1,4 +1,5 @@
 import Link from "next/link";
+import EraLink from "./EraLink";
 import Scroller from "./Scroller";
 import type { Era } from "@/lib/types";
 
@@ -21,10 +22,11 @@ export default function EraCarousel({ eras }: { eras: Era[] }) {
       {/* py-8 dá espaço ao glow do hover para não ser cortado pelo overflow */}
       <Scroller className="flex gap-6 px-6 py-8 sm:gap-9">
         {eras.map((era) => (
-          <Link
+          <EraLink
             key={era.slug}
             href={`/eras/${era.slug}`}
-            aria-label={`${era.name} era`}
+            color={era.accent}
+            ariaLabel={`${era.name} era`}
             className="group shrink-0"
             style={{ "--c": era.accent } as React.CSSProperties}
           >
@@ -56,7 +58,7 @@ export default function EraCarousel({ eras }: { eras: Era[] }) {
             <p className="mt-3 max-w-36 text-center text-xs font-semibold uppercase tracking-[0.2em] text-muted transition-colors group-hover:text-[var(--c)] sm:max-w-48">
               {era.name}
             </p>
-          </Link>
+          </EraLink>
         ))}
       </Scroller>
     </section>
