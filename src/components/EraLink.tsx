@@ -46,7 +46,16 @@ export default function EraLink({
       return;
     }
 
-    const played = playEraTransition({ x: e.clientX, y: e.clientY, color, href });
+    // A onda nasce do CENTRO exato do círculo da era (não da posição do rato),
+    // que é o que se espera visualmente e é sempre uma coordenada fiável.
+    const orb =
+      (e.currentTarget.querySelector("[data-era-orb]") as HTMLElement | null) ??
+      e.currentTarget;
+    const rect = orb.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+
+    const played = playEraTransition({ x, y, color, href });
     if (played) e.preventDefault();
   }
 

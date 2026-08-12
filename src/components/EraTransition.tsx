@@ -60,6 +60,9 @@ export default function EraTransition() {
         router.push(href);
         return;
       }
+      // Salvaguarda: origem sempre finita (senão o clip-path cairia no centro).
+      if (!Number.isFinite(x)) x = window.innerWidth / 2;
+      if (!Number.isFinite(y)) y = window.innerHeight / 2;
       // Raio necessário para chegar ao canto mais distante do ponto de clique.
       const radius = Math.hypot(
         Math.max(x, window.innerWidth - x),
