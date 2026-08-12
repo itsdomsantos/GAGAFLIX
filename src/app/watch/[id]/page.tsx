@@ -58,7 +58,7 @@ export default async function WatchPage({
               className="rounded-full border border-line px-4 py-2 text-sm transition-colors hover:border-era"
               style={{ color: era.accent }}
             >
-              Era {era.name} →
+              {era.name} Era →
             </Link>
           )}
         </div>

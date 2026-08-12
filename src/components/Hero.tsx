@@ -25,7 +25,7 @@ export default function Hero({ video, era }: { video: Video; era: Era | null }) 
             className="mb-3 text-xs font-semibold uppercase tracking-[0.25em]"
             style={{ color: era.accent }}
           >
-            Era {era.name}
+            {era.name} Era
           </p>
         )}
         <h1 className="font-display max-w-3xl text-5xl leading-none chrome-text sm:text-7xl [text-wrap:balance]">
