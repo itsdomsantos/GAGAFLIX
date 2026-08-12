@@ -10,15 +10,16 @@ interface IncomingMessage {
   text?: string;
 }
 
-interface GeminiChunk {
-  candidates?: { content?: { parts?: { text?: string }[] } }[];
+interface GeminiResponse {
+  candidates?: {
+    content?: { parts?: { text?: string }[] };
+    finishReason?: string;
+  }[];
+  promptFeedback?: { blockReason?: string };
 }
 
 function endpoint(model: string, key: string) {
-  return (
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}` +
-    `:streamGenerateContent?alt=sse&key=${key}`
-  );
+  return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
 }
 
 export async function POST(req: Request) {
@@ -49,7 +50,9 @@ export async function POST(req: Request) {
       role: m.role === "model" || m.role === "assistant" ? "model" : "user",
       parts: [{ text: m.text }],
     })),
-    generationConfig: { temperature: 0.8, maxOutputTokens: 800 },
+    // Non-streaming: pedimos a resposta completa de uma vez. Mais fiável que o
+    // SSE (que cortava a meio). maxOutputTokens folgado para não truncar.
+    generationConfig: { temperature: 0.8, maxOutputTokens: 1024 },
   });
 
   const call = (model: string) =>
@@ -59,73 +62,38 @@ export async function POST(req: Request) {
       body: payload,
     });
 
-  // Modelo: override/cache/auto-descoberta. Se der 404 (modelo retirado),
-  // redescobre uma vez e tenta de novo.
   let model = await resolveModel(key);
   if (!model) {
     return new Response("No Gemini model available for this API key.", { status: 502 });
   }
-  let geminiRes = await call(model);
-  if (geminiRes.status === 404 && !process.env.GEMINI_MODEL) {
+  let res = await call(model);
+  if (res.status === 404 && !process.env.GEMINI_MODEL) {
     invalidateModel();
     const fresh = await resolveModel(key, true);
     if (fresh && fresh !== model) {
       model = fresh;
-      geminiRes = await call(model);
+      res = await call(model);
     }
   }
 
-  if (!geminiRes.ok || !geminiRes.body) {
-    const detail = await geminiRes.text().catch(() => "");
-    return new Response(`Gemini error (${geminiRes.status}): ${detail.slice(0, 300)}`, {
-      status: 502,
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    return new Response(`Gemini error (${res.status}): ${detail.slice(0, 300)}`, { status: 502 });
+  }
+
+  const data = (await res.json()) as GeminiResponse;
+  const candidate = data.candidates?.[0];
+  const text = candidate?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
+
+  if (!text.trim()) {
+    const reason = candidate?.finishReason ?? data.promptFeedback?.blockReason ?? "empty response";
+    return new Response(`⚠️ No answer (${reason}). Try rephrasing, Little Monster. 🐾`, {
+      status: 200,
+      headers: { "content-type": "text/plain; charset=utf-8" },
     });
   }
 
-  const encoder = new TextEncoder();
-  const stream = new ReadableStream<Uint8Array>({
-    async start(controller) {
-      const reader = geminiRes.body!.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      const emit = (line: string) => {
-        const trimmed = line.trim();
-        if (!trimmed.startsWith("data:")) return;
-        const data = trimmed.slice(5).trim();
-        if (!data || data === "[DONE]") return;
-        try {
-          const json = JSON.parse(data) as GeminiChunk;
-          const text =
-            json.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
-          if (text) controller.enqueue(encoder.encode(text));
-        } catch {
-          // chunk parcial — junta no próximo read
-        }
-      };
-
-      try {
-        for (;;) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() ?? "";
-          for (const line of lines) emit(line);
-        }
-        // Despeja o último pedaço: o evento final pode não trazer newline,
-        // e sem isto a resposta cortava a meio (links incluídos).
-        buffer += decoder.decode();
-        if (buffer.trim()) emit(buffer);
-      } catch {
-        controller.enqueue(encoder.encode("\n\n⚠️ Connection interrupted."));
-      } finally {
-        controller.close();
-      }
-    },
-  });
-
-  return new Response(stream, {
+  return new Response(text, {
     headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" },
   });
 }
