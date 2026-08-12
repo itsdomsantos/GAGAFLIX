@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import BottomBar from "@/components/BottomBar";
 import KeyboardShortcuts from "@/components/KeyboardShortcuts";
 import ChatBot from "@/components/ChatBot";
+import EraTransition from "@/components/EraTransition";
 
 const archivo = Archivo({
   variable: "--font-archivo",
@@ -41,6 +42,7 @@ export default function RootLayout({
         </footer>
         <BottomBar />
         <ChatBot />
+        <EraTransition />
       </body>
     </html>
   );
