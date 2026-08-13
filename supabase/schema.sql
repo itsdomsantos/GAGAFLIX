@@ -43,12 +43,40 @@ create table if not exists public.timeline_moments (
   image_url text
 );
 
+-- Site analytics — one row per page view (privacy-friendly, no cookies,
+-- no third parties, no personal data). visitor_id is a random id kept in
+-- the browser's localStorage just to tell returning visitors apart.
+create table if not exists public.page_views (
+  id         uuid primary key default gen_random_uuid(),
+  path       text not null,
+  referrer   text,
+  visitor_id text,
+  created_at timestamptz not null default now()
+);
+
+-- Handy indexes for the stats dashboard.
+create index if not exists page_views_created_at_idx on public.page_views (created_at desc);
+create index if not exists page_views_path_idx on public.page_views (path);
+
+-- Already have the other tables and just want analytics? Run this block on
+-- its own (it's safe to run once):
+--   create table if not exists public.page_views (
+--     id uuid primary key default gen_random_uuid(),
+--     path text not null, referrer text, visitor_id text,
+--     created_at timestamptz not null default now());
+--   alter table public.page_views enable row level security;
+--   create policy "public insert page_views" on public.page_views
+--     for insert to anon, authenticated with check (true);
+--   create policy "admin read page_views" on public.page_views
+--     for select to authenticated using (true);
+
 -- ------------------------------------------------------------
 -- Security (RLS): everyone reads, only you (authenticated) write
 -- ------------------------------------------------------------
 alter table public.eras enable row level security;
 alter table public.videos enable row level security;
 alter table public.timeline_moments enable row level security;
+alter table public.page_views enable row level security;
 
 create policy "public read eras" on public.eras
   for select using (true);
@@ -64,6 +92,12 @@ create policy "public read timeline" on public.timeline_moments
   for select using (true);
 create policy "admin write timeline" on public.timeline_moments
   for all to authenticated using (true) with check (true);
+
+-- Analytics: anyone (the public site) can log a view, only you can read them.
+create policy "public insert page_views" on public.page_views
+  for insert to anon, authenticated with check (true);
+create policy "admin read page_views" on public.page_views
+  for select to authenticated using (true);
 
 -- ------------------------------------------------------------
 -- Starter content (the same the site shows without Supabase).
