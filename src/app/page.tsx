@@ -32,15 +32,18 @@ export default async function HomePage() {
       <EraCarousel eras={eras} />
 
       <Row title="Recently added" videos={recent} accents={accents} />
-
-      {VIDEO_TYPES.map((type) => (
-        <Row
-          key={type}
-          title={VIDEO_TYPE_LABELS[type]}
-          videos={videos.filter((v) => v.type === type)}
-          accents={accents}
-        />
-      ))}
+      {/* limit to 20 videos per type */}
+      {VIDEO_TYPES.map((type) => {
+        const videosForType = videos.filter((v) => v.type === type);
+        return (
+          <Row
+            key={type}
+            title={VIDEO_TYPE_LABELS[type]}
+            videos={videosForType.slice(0, 20)}
+            accents={accents}
+          />
+        );
+      })}
     </div>
   );
 }
