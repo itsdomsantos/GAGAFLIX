@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { getBrowserClient, hasSupabase } from "@/lib/supabase";
+import { hasSupabase } from "@/lib/supabase";
 
 const VISITOR_KEY = "gagaflix_visitor";
 
@@ -34,8 +34,9 @@ function referrerHost(): string | null {
 }
 
 /**
- * Logs one privacy-friendly page view per navigation into Supabase.
- * No cookies, no third parties — just path, referrer host and an anonymous id.
+ * Logs one privacy-friendly page view per navigation via /api/track.
+ * No cookies, no third parties — just path, referrer host, an anonymous id
+ * and the visitor's country (resolved server-side from Vercel's geo header).
  * The admin panel is never tracked.
  */
 export default function Analytics() {
@@ -45,15 +46,17 @@ export default function Analytics() {
     if (!hasSupabase || !pathname) return;
     if (pathname.startsWith("/admin")) return;
 
-    // Fire-and-forget; a failed insert must never disturb the visitor.
-    getBrowserClient()
-      .from("page_views")
-      .insert({
+    // Fire-and-forget; a failed request must never disturb the visitor.
+    fetch("/api/track", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
         path: pathname,
         referrer: referrerHost(),
         visitor_id: getVisitorId(),
-      })
-      .then(() => {}, () => {});
+      }),
+      keepalive: true,
+    }).catch(() => {});
   }, [pathname]);
 
   return null;

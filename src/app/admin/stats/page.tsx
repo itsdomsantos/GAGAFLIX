@@ -7,6 +7,7 @@ type ViewRow = {
   path: string;
   referrer: string | null;
   visitor_id: string | null;
+  country: string | null;
   created_at: string;
 };
 
@@ -26,6 +27,26 @@ function prettyPath(path: string): string {
   if (parts[0] === "eras" && parts[1]) return `Era · ${parts[1]}`;
   if (parts[0] === "watch") return "Watch";
   return path;
+}
+
+/** ISO country code → flag emoji + English name for the dashboard. */
+const COUNTRY_NAMES =
+  typeof Intl !== "undefined" && "DisplayNames" in Intl
+    ? new Intl.DisplayNames(["en"], { type: "region" })
+    : null;
+
+function prettyCountry(code: string): string {
+  if (code === "??") return "Unknown";
+  const flag = /^[A-Z]{2}$/.test(code)
+    ? String.fromCodePoint(...[...code].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65))
+    : "🏳️";
+  let name = code;
+  try {
+    name = COUNTRY_NAMES?.of(code) ?? code;
+  } catch {
+    name = code;
+  }
+  return `${flag}  ${name}`;
 }
 
 function startOfDay(d: Date): Date {
@@ -48,7 +69,7 @@ export default function AdminStats() {
     const since = new Date(Date.now() - days * 86_400_000).toISOString();
     getBrowserClient()
       .from("page_views")
-      .select("path, referrer, visitor_id, created_at")
+      .select("path, referrer, visitor_id, country, created_at")
       .gte("created_at", since)
       .order("created_at", { ascending: false })
       .limit(50_000)
@@ -75,6 +96,7 @@ export default function AdminStats() {
 
     const pageCounts = new Map<string, number>();
     const refCounts = new Map<string, number>();
+    const countryCounts = new Map<string, number>();
     const perDay = new Map<string, number>();
 
     // Seed every day in the window so the chart has no gaps.
@@ -87,12 +109,15 @@ export default function AdminStats() {
       pageCounts.set(r.path, (pageCounts.get(r.path) ?? 0) + 1);
       const ref = r.referrer && r.referrer.trim() ? r.referrer : "Direct / none";
       refCounts.set(ref, (refCounts.get(ref) ?? 0) + 1);
+      const country = r.country && r.country.trim() ? r.country : "??";
+      countryCounts.set(country, (countryCounts.get(country) ?? 0) + 1);
       const k = dayKey(new Date(r.created_at));
       if (perDay.has(k)) perDay.set(k, (perDay.get(k) ?? 0) + 1);
     }
 
     const topPages = [...pageCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
     const topRefs = [...refCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
+    const topCountries = [...countryCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
     const series = [...perDay.entries()].sort((a, b) => a[0].localeCompare(b[0]));
 
     return {
@@ -102,6 +127,7 @@ export default function AdminStats() {
       perDayAvg: Math.round(rows.length / days),
       topPages,
       topRefs,
+      topCountries,
       series,
     };
   }, [rows, days]);
@@ -168,6 +194,14 @@ export default function AdminStats() {
             <RankList
               title="Traffic sources"
               rows={stats.topRefs.map(([k, v]) => [k, v])}
+              total={stats.total}
+            />
+          </div>
+
+          <div className="mt-6">
+            <RankList
+              title="Countries"
+              rows={stats.topCountries.map(([k, v]) => [prettyCountry(k), v])}
               total={stats.total}
             />
           </div>

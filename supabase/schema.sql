@@ -51,8 +51,12 @@ create table if not exists public.page_views (
   path       text not null,
   referrer   text,
   visitor_id text,
+  country    text,
   created_at timestamptz not null default now()
 );
+
+-- Already had page_views before country existed? Run just this line:
+-- alter table public.page_views add column if not exists country text;
 
 -- Handy indexes for the stats dashboard.
 create index if not exists page_views_created_at_idx on public.page_views (created_at desc);
@@ -62,7 +66,7 @@ create index if not exists page_views_path_idx on public.page_views (path);
 -- its own (it's safe to run once):
 --   create table if not exists public.page_views (
 --     id uuid primary key default gen_random_uuid(),
---     path text not null, referrer text, visitor_id text,
+--     path text not null, referrer text, visitor_id text, country text,
 --     created_at timestamptz not null default now());
 --   alter table public.page_views enable row level security;
 --   create policy "public insert page_views" on public.page_views
