@@ -20,6 +20,7 @@ const nav = [
   { href: "/admin/import", label: "Import" },
   { href: "/admin/eras", label: "Eras" },
   { href: "/admin/timeline", label: "Timeline" },
+  { href: "/admin/stats", label: "Stats" },
 ];
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {

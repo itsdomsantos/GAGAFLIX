@@ -5,20 +5,23 @@ import { useEffect, useState } from "react";
 import { getBrowserClient } from "@/lib/supabase";
 
 export default function AdminHome() {
-  const [counts, setCounts] = useState({ videos: 0, eras: 0, moments: 0, featured: 0 });
+  const [counts, setCounts] = useState({ videos: 0, eras: 0, moments: 0, featured: 0, views30d: 0 });
 
   useEffect(() => {
     const supabase = getBrowserClient();
+    const since = new Date(Date.now() - 30 * 86_400_000).toISOString();
     Promise.all([
       supabase.from("videos").select("id, featured"),
       supabase.from("eras").select("slug"),
       supabase.from("timeline_moments").select("id"),
-    ]).then(([videos, eras, moments]) => {
+      supabase.from("page_views").select("id", { count: "exact", head: true }).gte("created_at", since),
+    ]).then(([videos, eras, moments, views]) => {
       setCounts({
         videos: videos.data?.length ?? 0,
         featured: videos.data?.filter((v) => v.featured).length ?? 0,
         eras: eras.data?.length ?? 0,
         moments: moments.data?.length ?? 0,
+        views30d: views.count ?? 0,
       });
     });
   }, []);
@@ -28,6 +31,7 @@ export default function AdminHome() {
     { href: "/admin/videos", label: "Featured", value: counts.featured, hint: "Videos flagged as featured; the newest one opens the homepage." },
     { href: "/admin/eras", label: "Eras", value: counts.eras, hint: "Names, descriptions and colors for every era." },
     { href: "/admin/timeline", label: "Timeline", value: counts.moments, hint: "Career milestones, from 2008 to today." },
+    { href: "/admin/stats", label: "Views (30d)", value: counts.views30d, hint: "Page views in the last 30 days — open Stats for the full picture." },
   ];
 
   return (
