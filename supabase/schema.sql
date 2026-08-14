@@ -43,13 +43,13 @@ create table if not exists public.timeline_moments (
   image_url text
 );
 
--- Poster items — curated 4:5 poster cards for the homepage, in two
--- sections: "featured" and "movies". Not tied to any era. The cover is a
--- pasted image URL; the link (optional) is where clicking the card goes
--- (e.g. a Netflix/Disney+ title page, a trailer, or an internal /watch link).
-create table if not exists public.posters (
+-- Movies — 4:5 poster cards that link out to a subscription player
+-- (Netflix, Disney+, Prime Video…). These are NOT hosted here: the cover is
+-- a pasted image URL and the link opens the film on its streaming service.
+-- (The homepage "Featured" row is just videos flagged featured, shown as
+-- posters — it needs no table of its own.)
+create table if not exists public.movies (
   id         uuid primary key default gen_random_uuid(),
-  section    text not null check (section in ('featured','movies')),
   title      text not null,
   subtitle   text,
   cover_url  text,
@@ -58,20 +58,19 @@ create table if not exists public.posters (
   created_at timestamptz not null default now()
 );
 
-create index if not exists posters_section_sort_idx on public.posters (section, sort);
+create index if not exists movies_sort_idx on public.movies (sort);
 
--- Already have the other tables and just want the poster sections? Run this
+-- Already have the other tables and just want the movies section? Run this
 -- block on its own (safe to run once):
---   create table if not exists public.posters (
+--   create table if not exists public.movies (
 --     id uuid primary key default gen_random_uuid(),
---     section text not null check (section in ('featured','movies')),
 --     title text not null, subtitle text, cover_url text, link text,
 --     sort integer not null default 0,
 --     created_at timestamptz not null default now());
---   alter table public.posters enable row level security;
---   create policy "public read posters" on public.posters
+--   alter table public.movies enable row level security;
+--   create policy "public read movies" on public.movies
 --     for select using (true);
---   create policy "admin write posters" on public.posters
+--   create policy "admin write movies" on public.movies
 --     for all to authenticated using (true) with check (true);
 
 -- Site analytics — one row per page view (privacy-friendly, no cookies,
@@ -111,7 +110,7 @@ create index if not exists page_views_path_idx on public.page_views (path);
 alter table public.eras enable row level security;
 alter table public.videos enable row level security;
 alter table public.timeline_moments enable row level security;
-alter table public.posters enable row level security;
+alter table public.movies enable row level security;
 alter table public.page_views enable row level security;
 
 create policy "public read eras" on public.eras
@@ -129,9 +128,9 @@ create policy "public read timeline" on public.timeline_moments
 create policy "admin write timeline" on public.timeline_moments
   for all to authenticated using (true) with check (true);
 
-create policy "public read posters" on public.posters
+create policy "public read movies" on public.movies
   for select using (true);
-create policy "admin write posters" on public.posters
+create policy "admin write movies" on public.movies
   for all to authenticated using (true) with check (true);
 
 -- Analytics: anyone (the public site) can log a view, only you can read them.

@@ -2,22 +2,44 @@ import EraCarousel from "@/components/EraCarousel";
 import Hero from "@/components/Hero";
 import Row from "@/components/Row";
 import PosterRow from "@/components/PosterRow";
-import { getEras, getFeatured, getPosters, getRecent, getVideos } from "@/lib/data";
-import { POSTER_SECTION_LABELS, VIDEO_TYPES, VIDEO_TYPE_LABELS } from "@/lib/types";
+import { autoThumbnail } from "@/lib/player";
+import { getEras, getFeatured, getMovies, getRecent, getVideos } from "@/lib/data";
+import { VIDEO_TYPES, VIDEO_TYPE_LABELS } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [featured, videos, recent, eras, featuredPosters, moviePosters] = await Promise.all([
+  const [featured, videos, recent, eras, movies] = await Promise.all([
     getFeatured(),
     getVideos(),
     getRecent(12),
     getEras(),
-    getPosters("featured"),
-    getPosters("movies"),
+    getMovies(),
   ]);
 
   const accents = Object.fromEntries(eras.map((e) => [e.slug, e.accent]));
+
+  // Featured row: videos flagged featured, shown as 4:5 posters.
+  const featuredItems = videos
+    .filter((v) => v.featured)
+    .map((v) => ({
+      key: v.id,
+      title: v.title,
+      subtitle: [VIDEO_TYPE_LABELS[v.type], v.date?.slice(0, 4)].filter(Boolean).join(" · "),
+      cover: autoThumbnail(v),
+      href: `/watch/${v.id}`,
+      external: false,
+    }));
+
+  // Movies row: poster cards that link out to a streaming service.
+  const movieItems = movies.map((m) => ({
+    key: m.id,
+    title: m.title,
+    subtitle: m.subtitle,
+    cover: m.cover_url,
+    href: m.link,
+    external: true,
+  }));
   const featuredEra = featured?.era_slug
     ? eras.find((e) => e.slug === featured.era_slug) ?? null
     : null;
@@ -32,11 +54,11 @@ export default async function HomePage() {
         </section>
       )}
 
-      <PosterRow title={POSTER_SECTION_LABELS.featured} posters={featuredPosters} />
+      <PosterRow title="Featured" items={featuredItems} />
 
       <EraCarousel eras={eras} />
 
-      <PosterRow title={POSTER_SECTION_LABELS.movies} posters={moviePosters} />
+      <PosterRow title="Movies" items={movieItems} />
 
       <Row title="Recently added" videos={recent} accents={accents} />
       {/* limit to 20 videos per type */}

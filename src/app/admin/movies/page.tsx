@@ -3,16 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { btnCls, btnGhostCls, inputCls, labelCls } from "@/components/admin/AdminShell";
 import { getBrowserClient } from "@/lib/supabase";
-import {
-  POSTER_SECTIONS,
-  POSTER_SECTION_LABELS,
-  type Poster,
-  type PosterSection,
-} from "@/lib/types";
+import type { Movie } from "@/lib/types";
 
 interface FormState {
   id: string | null;
-  section: PosterSection;
   title: string;
   subtitle: string;
   cover_url: string;
@@ -22,7 +16,6 @@ interface FormState {
 
 const empty: FormState = {
   id: null,
-  section: "featured",
   title: "",
   subtitle: "",
   cover_url: "",
@@ -31,42 +24,35 @@ const empty: FormState = {
 };
 
 export default function AdminMovies() {
-  const [posters, setPosters] = useState<Poster[]>([]);
+  const [movies, setMovies] = useState<Movie[]>([]);
   const [form, setForm] = useState<FormState | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const { data } = await getBrowserClient()
-      .from("posters")
+      .from("movies")
       .select("*")
-      .order("section", { ascending: true })
       .order("sort", { ascending: true })
       .order("created_at", { ascending: false });
-    setPosters((data as Poster[]) ?? []);
+    setMovies((data as Movie[]) ?? []);
   }, []);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  function edit(p: Poster) {
+  function edit(m: Movie) {
     setForm({
-      id: p.id,
-      section: p.section,
-      title: p.title,
-      subtitle: p.subtitle ?? "",
-      cover_url: p.cover_url ?? "",
-      link: p.link ?? "",
-      sort: String(p.sort),
+      id: m.id,
+      title: m.title,
+      subtitle: m.subtitle ?? "",
+      cover_url: m.cover_url ?? "",
+      link: m.link ?? "",
+      sort: String(m.sort),
     });
     setError(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  function newItem(section: PosterSection) {
-    setForm({ ...empty, section });
-    setError(null);
   }
 
   async function save(e: React.FormEvent) {
@@ -75,7 +61,6 @@ export default function AdminMovies() {
     setBusy(true);
     setError(null);
     const payload = {
-      section: form.section,
       title: form.title.trim(),
       subtitle: form.subtitle.trim() || null,
       cover_url: form.cover_url.trim() || null,
@@ -84,8 +69,8 @@ export default function AdminMovies() {
     };
     const supabase = getBrowserClient();
     const result = form.id
-      ? await supabase.from("posters").update(payload).eq("id", form.id)
-      : await supabase.from("posters").insert(payload);
+      ? await supabase.from("movies").update(payload).eq("id", form.id)
+      : await supabase.from("movies").insert(payload);
     if (result.error) {
       setError(`Could not save: ${result.error.message}`);
     } else {
@@ -95,9 +80,9 @@ export default function AdminMovies() {
     setBusy(false);
   }
 
-  async function remove(p: Poster) {
-    if (!window.confirm(`Delete “${p.title}”? This cannot be undone.`)) return;
-    const { error } = await getBrowserClient().from("posters").delete().eq("id", p.id);
+  async function remove(m: Movie) {
+    if (!window.confirm(`Delete “${m.title}”? This cannot be undone.`)) return;
+    const { error } = await getBrowserClient().from("movies").delete().eq("id", m.id);
     if (error) setError(`Could not delete: ${error.message}`);
     else await load();
   }
@@ -106,16 +91,17 @@ export default function AdminMovies() {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="font-display text-4xl chrome-text">Movies &amp; Featured</h1>
-          <p className="mt-2 text-sm text-muted">
-            Curated 4:5 poster cards for the homepage. Paste a cover image and, optionally, a
-            link — a Netflix/Disney+ title page, a trailer, or an internal <code>/watch/…</code>{" "}
-            link. Not tied to any era.
+          <h1 className="font-display text-4xl chrome-text">Movies</h1>
+          <p className="mt-2 max-w-2xl text-sm text-muted">
+            4:5 poster cards that link out to a streaming service (Netflix, Disney+, Prime…).
+            Nothing is hosted here — paste a cover image and the film&apos;s link, and the card
+            opens it on its platform. For the homepage <strong>Featured</strong> row, just flag a
+            video as featured in <a href="/admin/videos" className="text-accent hover:underline">Videos</a>.
           </p>
         </div>
         {!form && (
-          <button className={btnCls} onClick={() => newItem("featured")}>
-            + New poster
+          <button className={btnCls} onClick={() => { setForm(empty); setError(null); }}>
+            + New movie
           </button>
         )}
       </div>
@@ -127,33 +113,10 @@ export default function AdminMovies() {
       {form && (
         <form onSubmit={save} className="mt-6 rounded-lg border border-line bg-surface p-6">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <label htmlFor="p-section" className={labelCls}>Section</label>
-              <select
-                id="p-section"
-                className={inputCls}
-                value={form.section}
-                onChange={(e) => setForm({ ...form, section: e.target.value as PosterSection })}
-              >
-                {POSTER_SECTIONS.map((s) => (
-                  <option key={s} value={s}>{POSTER_SECTION_LABELS[s]}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="p-sort" className={labelCls}>Order (lower shows first)</label>
-              <input
-                id="p-sort"
-                type="number"
-                className={inputCls}
-                value={form.sort}
-                onChange={(e) => setForm({ ...form, sort: e.target.value })}
-              />
-            </div>
             <div className="md:col-span-2">
-              <label htmlFor="p-title" className={labelCls}>Title</label>
+              <label htmlFor="m-title" className={labelCls}>Title</label>
               <input
-                id="p-title"
+                id="m-title"
                 required
                 className={inputCls}
                 value={form.title}
@@ -161,20 +124,30 @@ export default function AdminMovies() {
                 placeholder="A Star Is Born"
               />
             </div>
-            <div className="md:col-span-2">
-              <label htmlFor="p-subtitle" className={labelCls}>Subtitle (optional)</label>
+            <div>
+              <label htmlFor="m-subtitle" className={labelCls}>Subtitle (optional)</label>
               <input
-                id="p-subtitle"
+                id="m-subtitle"
                 className={inputCls}
                 value={form.subtitle}
                 onChange={(e) => setForm({ ...form, subtitle: e.target.value })}
-                placeholder="2018 · Drama · on Netflix"
+                placeholder="2018 · on Netflix"
+              />
+            </div>
+            <div>
+              <label htmlFor="m-sort" className={labelCls}>Order (lower shows first)</label>
+              <input
+                id="m-sort"
+                type="number"
+                className={inputCls}
+                value={form.sort}
+                onChange={(e) => setForm({ ...form, sort: e.target.value })}
               />
             </div>
             <div className="md:col-span-2">
-              <label htmlFor="p-cover" className={labelCls}>Cover image URL (4:5 poster)</label>
+              <label htmlFor="m-cover" className={labelCls}>Cover image URL (4:5 poster)</label>
               <input
-                id="p-cover"
+                id="m-cover"
                 type="url"
                 className={inputCls}
                 value={form.cover_url}
@@ -183,14 +156,14 @@ export default function AdminMovies() {
               />
             </div>
             <div className="md:col-span-2">
-              <label htmlFor="p-link" className={labelCls}>Link (optional)</label>
+              <label htmlFor="m-link" className={labelCls}>Streaming link (opens in a new tab)</label>
               <input
-                id="p-link"
+                id="m-link"
                 type="url"
                 className={inputCls}
                 value={form.link}
                 onChange={(e) => setForm({ ...form, link: e.target.value })}
-                placeholder="https://www.netflix.com/title/… — external opens in a new tab"
+                placeholder="https://www.netflix.com/title/…"
               />
             </div>
             {form.cover_url.trim() && (
@@ -206,7 +179,7 @@ export default function AdminMovies() {
           </div>
           <div className="mt-6 flex gap-3">
             <button type="submit" disabled={busy} className={btnCls}>
-              {busy ? "Saving…" : form.id ? "Save changes" : "Add poster"}
+              {busy ? "Saving…" : form.id ? "Save changes" : "Add movie"}
             </button>
             <button type="button" className={btnGhostCls} onClick={() => setForm(null)}>
               Cancel
@@ -215,56 +188,36 @@ export default function AdminMovies() {
         </form>
       )}
 
-      {POSTER_SECTIONS.map((section) => {
-        const items = posters.filter((p) => p.section === section);
-        return (
-          <section key={section} className="mt-8">
-            <div className="flex items-center justify-between gap-4">
-              <h2 className="text-lg font-semibold tracking-wide">
-                {POSTER_SECTION_LABELS[section]}{" "}
-                <span className="text-sm font-normal text-muted">({items.length})</span>
-              </h2>
-              {!form && (
-                <button className={btnGhostCls} onClick={() => newItem(section)}>
-                  + Add to {POSTER_SECTION_LABELS[section]}
-                </button>
+      <ul className="mt-8 divide-y divide-line rounded-lg border border-line bg-surface">
+        {movies.map((m) => (
+          <li key={m.id} className="flex items-center gap-4 p-3">
+            <div className="aspect-[4/5] w-12 shrink-0 overflow-hidden rounded bg-surface-2">
+              {m.cover_url && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={m.cover_url} alt="" loading="lazy" className="h-full w-full object-cover" />
               )}
             </div>
-            <ul className="mt-3 divide-y divide-line rounded-lg border border-line bg-surface">
-              {items.map((p) => (
-                <li key={p.id} className="flex items-center gap-4 p-3">
-                  <div className="aspect-[4/5] w-12 shrink-0 overflow-hidden rounded bg-surface-2">
-                    {p.cover_url && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={p.cover_url} alt="" loading="lazy" className="h-full w-full object-cover" />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{p.title}</p>
-                    <p className="mt-0.5 truncate text-xs text-muted">
-                      #{p.sort}
-                      {p.subtitle ? ` · ${p.subtitle}` : ""}
-                      {p.link ? " · has link" : ""}
-                    </p>
-                  </div>
-                  <button className={btnGhostCls} onClick={() => edit(p)}>Edit</button>
-                  <button
-                    className="rounded-md border border-line px-3 py-2 text-sm text-muted transition-colors hover:border-accent hover:text-accent"
-                    onClick={() => remove(p)}
-                  >
-                    Delete
-                  </button>
-                </li>
-              ))}
-              {items.length === 0 && (
-                <li className="p-6 text-sm text-muted">
-                  Nothing here yet — hit “+ Add to {POSTER_SECTION_LABELS[section]}”. 🐾
-                </li>
-              )}
-            </ul>
-          </section>
-        );
-      })}
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium">{m.title}</p>
+              <p className="mt-0.5 truncate text-xs text-muted">
+                #{m.sort}
+                {m.subtitle ? ` · ${m.subtitle}` : ""}
+                {m.link ? " · has link" : " · no link yet"}
+              </p>
+            </div>
+            <button className={btnGhostCls} onClick={() => edit(m)}>Edit</button>
+            <button
+              className="rounded-md border border-line px-3 py-2 text-sm text-muted transition-colors hover:border-accent hover:text-accent"
+              onClick={() => remove(m)}
+            >
+              Delete
+            </button>
+          </li>
+        ))}
+        {movies.length === 0 && (
+          <li className="p-6 text-sm text-muted">No movies yet — hit “+ New movie”. 🐾</li>
+        )}
+      </ul>
     </div>
   );
 }

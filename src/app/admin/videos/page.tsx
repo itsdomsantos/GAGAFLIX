@@ -203,7 +203,7 @@ export default function AdminVideos() {
               <input type="checkbox" checked={form.featured}
                 onChange={(e) => setForm({ ...form, featured: e.target.checked })}
                 className="h-4 w-4 accent-[var(--accent)]" />
-              Feature on the homepage (hero)
+              Feature on the homepage (hero + the 4:5 “Featured” row)
             </label>
           </div>
           <div className="mt-6 flex gap-3">
