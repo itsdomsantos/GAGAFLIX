@@ -1,21 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef } from "react";
-import { heroThumbnail } from "@/lib/player";
+import { useEffect, useRef, useState } from "react";
+import { heroThumbnail, youtubeId } from "@/lib/player";
 import { VIDEO_TYPE_LABELS, type Era, type Video } from "@/lib/types";
 
 export default function Hero({ video, era }: { video: Video; era: Era | null }) {
   const backdrop = heroThumbnail(video);
+  const yt = youtubeId(video.url);
+
+  // O vídeo de fundo só entra depois de montar (evita SSR) e se o utilizador
+  // não pediu menos movimento. A thumbnail fica por baixo como poster.
+  const [playVideo, setPlayVideo] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
 
   const sectionRef = useRef<HTMLElement>(null);
-  const backdropRef = useRef<HTMLImageElement>(null);
+  const mediaRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const veilRef = useRef<HTMLDivElement>(null);
   const cueRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!reduce && yt) setPlayVideo(true);
     if (reduce) return;
 
     let raf = 0;
@@ -28,9 +35,9 @@ export default function Hero({ video, era }: { video: Video; era: Era | null }) 
       // Progresso 0 → 1 conforme o hero sai do topo do ecrã.
       const p = Math.min(Math.max(-section.getBoundingClientRect().top / height, 0), 1);
 
-      if (backdropRef.current) {
-        backdropRef.current.style.transform = `scale(${1 + p * 0.14}) translateY(${p * 48}px)`;
-        backdropRef.current.style.filter = `brightness(${1 - p * 0.35})`;
+      if (mediaRef.current) {
+        mediaRef.current.style.transform = `scale(${1 + p * 0.14}) translateY(${p * 48}px)`;
+        mediaRef.current.style.filter = `brightness(${1 - p * 0.35})`;
       }
       if (contentRef.current) {
         contentRef.current.style.transform = `translateY(${p * -64}px)`;
@@ -56,27 +63,58 @@ export default function Hero({ video, era }: { video: Video; era: Era | null }) 
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
     };
-  }, []);
+  }, [yt]);
+
+  const embedUrl = yt
+    ? `https://www.youtube-nocookie.com/embed/${yt}?autoplay=1&mute=1&loop=1&playlist=${yt}&controls=0&modestbranding=1&rel=0&playsinline=1&disablekb=1&fs=0&iv_load_policy=3`
+    : null;
 
   return (
     <section
       ref={sectionRef}
       className="relative flex min-h-[72vh] items-end overflow-hidden"
     >
-      {backdrop && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          ref={backdropRef}
-          src={backdrop}
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover will-change-transform"
-        />
-      )}
+      <div ref={mediaRef} className="absolute inset-0 will-change-transform">
+        {backdrop && (
+          // Poster: a thumbnail cobre a secção enquanto o vídeo ainda não toca.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={backdrop}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        )}
+        {playVideo && embedUrl && (
+          <div
+            className={`absolute inset-0 overflow-hidden transition-opacity duration-700 ${
+              videoReady ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            <iframe
+              src={embedUrl}
+              title={video.title}
+              onLoad={() => setVideoReady(true)}
+              allow="autoplay; encrypted-media"
+              // Sobredimensiona o iframe 16:9 para cobrir a secção sem barras pretas.
+              style={{
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                width: "max(100vw, 177.78vh)",
+                height: "max(56.25vw, 100vh)",
+                border: 0,
+                pointerEvents: "none",
+              }}
+            />
+          </div>
+        )}
+      </div>
       {/* Véus cinematográficos sobre a imagem */}
-      <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/40 to-bg/30" />
-      <div className="absolute inset-0 bg-gradient-to-r from-bg/80 via-transparent to-transparent" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-bg via-bg/40 to-bg/30" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-bg/80 via-transparent to-transparent" />
       {/* Véu extra que intensifica no scroll — a secção "afunda" no escuro */}
-      <div ref={veilRef} className="absolute inset-0 bg-bg opacity-0" />
+      <div ref={veilRef} className="pointer-events-none absolute inset-0 bg-bg opacity-0" />
 
       <div
         ref={contentRef}
