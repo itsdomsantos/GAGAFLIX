@@ -1,11 +1,11 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { autoThumbnail, youtubeId } from "@/lib/player";
-import { seedVideos } from "@/lib/seed";
+import { seedEras, seedVideos } from "@/lib/seed";
 import { getBrowserClient, hasSupabase } from "@/lib/supabase";
-import type { Video } from "@/lib/types";
+import type { Era, Video } from "@/lib/types";
 
 interface Track {
   id: string;
@@ -13,6 +13,7 @@ interface Track {
   ytId: string;
   cover: string | null;
   year: string | null;
+  album: string | null;
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -52,6 +53,7 @@ export default function MusicPlayer() {
   const [current, setCurrent] = useState<number | null>(null);
   const [playing, setPlaying] = useState(false);
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
 
   const playerRef = useRef<any>(null);
   const tracksRef = useRef<Track[]>([]);
@@ -59,31 +61,46 @@ export default function MusicPlayer() {
   tracksRef.current = tracks;
   currentRef.current = current;
 
-  // Build the track list from Music Videos (YouTube sources only).
+  // Build the track list from Music Videos (YouTube sources only), grouped and
+  // ordered by album (the site's eras).
   useEffect(() => {
     let alive = true;
     (async () => {
       let vids: Video[] = [];
+      let eras: Era[] = [];
       if (hasSupabase) {
-        const { data } = await getBrowserClient()
-          .from("videos")
-          .select("*")
-          .eq("type", "mv")
-          .order("date", { ascending: false });
-        vids = (data as Video[]) ?? [];
+        const supabase = getBrowserClient();
+        const [v, e] = await Promise.all([
+          supabase.from("videos").select("*").eq("type", "mv"),
+          supabase.from("eras").select("*"),
+        ]);
+        vids = (v.data as Video[]) ?? [];
+        eras = (e.data as Era[]) ?? [];
       } else {
         vids = seedVideos.filter((v) => v.type === "mv");
+        eras = seedEras;
       }
       if (!alive) return;
+
+      const eraName = new Map(eras.map((e) => [e.slug, e.name]));
+      const eraSort = new Map(eras.map((e) => [e.slug, e.sort]));
+      const sortOf = (slug: string | null) => (slug ? eraSort.get(slug) ?? 999 : 999);
+
       const built = vids
         .map((v) => ({ v, ytId: youtubeId(v.url) }))
         .filter((x): x is { v: Video; ytId: string } => Boolean(x.ytId))
+        // Album order first, then newest within the album.
+        .sort((a, b) => {
+          const s = sortOf(a.v.era_slug) - sortOf(b.v.era_slug);
+          return s !== 0 ? s : (b.v.date ?? "").localeCompare(a.v.date ?? "");
+        })
         .map(({ v, ytId }) => ({
           id: v.id,
           title: v.title,
           ytId,
           cover: v.poster_url || autoThumbnail(v),
           year: v.date ? v.date.slice(0, 4) : null,
+          album: v.era_slug ? eraName.get(v.era_slug) ?? null : null,
         }));
       setTracks(built);
     })();
@@ -176,6 +193,26 @@ export default function MusicPlayer() {
 
   const track = current != null ? tracks[current] : null;
 
+  // Group tracks by album (era), keeping each track's flat index for playback,
+  // and apply the search filter.
+  const groups = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const out: { album: string; items: { t: Track; i: number }[] }[] = [];
+    tracks.forEach((t, i) => {
+      if (q && !t.title.toLowerCase().includes(q) && !(t.album ?? "").toLowerCase().includes(q)) {
+        return;
+      }
+      const album = t.album ?? "Other";
+      let g = out[out.length - 1];
+      if (!g || g.album !== album) {
+        g = { album, items: [] };
+        out.push(g);
+      }
+      g.items.push({ t, i });
+    });
+    return out;
+  }, [tracks, query]);
+
   // The hidden player must stay mounted everywhere; only the UI hides on /admin.
   const showUI = !pathname.startsWith("/admin") && tracks.length > 0;
 
@@ -257,32 +294,54 @@ export default function MusicPlayer() {
                 </div>
               )}
 
-              <ul className="flex-1 overflow-y-auto py-1">
-                {tracks.map((t, i) => (
-                  <li key={t.id}>
-                    <button
-                      onClick={() => playAt(i)}
-                      className={`flex w-full items-center gap-3 px-4 py-2 text-left transition-colors hover:bg-surface-2 ${
-                        i === current ? "bg-surface-2" : ""
-                      }`}
-                    >
-                      <span className="h-9 w-9 shrink-0 overflow-hidden rounded bg-surface-2">
-                        {t.cover && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={t.cover} alt="" loading="lazy" className="h-full w-full object-cover" />
-                        )}
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className={`block truncate text-sm ${i === current ? "text-accent" : ""}`}>
-                          {t.title}
-                        </span>
-                        {t.year && <span className="block text-xs text-muted">{t.year}</span>}
-                      </span>
-                      {i === current && playing && <Bars />}
-                    </button>
-                  </li>
+              <div className="border-b border-line p-3">
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search songs or albums…"
+                  className="w-full rounded-full border border-line bg-surface-2 px-4 py-2 text-sm outline-none transition-colors placeholder:text-muted focus:border-accent"
+                />
+              </div>
+
+              <div className="flex-1 overflow-y-auto py-1">
+                {groups.map((g) => (
+                  <div key={g.album}>
+                    <p className="sticky top-0 bg-surface/95 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted backdrop-blur">
+                      {g.album}
+                    </p>
+                    <ul>
+                      {g.items.map(({ t, i }) => (
+                        <li key={t.id}>
+                          <button
+                            onClick={() => playAt(i)}
+                            className={`flex w-full items-center gap-3 px-4 py-2 text-left transition-colors hover:bg-surface-2 ${
+                              i === current ? "bg-surface-2" : ""
+                            }`}
+                          >
+                            <span className="h-9 w-9 shrink-0 overflow-hidden rounded bg-surface-2">
+                              {t.cover && (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={t.cover} alt="" loading="lazy" className="h-full w-full object-cover" />
+                              )}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className={`block truncate text-sm ${i === current ? "text-accent" : ""}`}>
+                                {t.title}
+                              </span>
+                              {t.year && <span className="block text-xs text-muted">{t.year}</span>}
+                            </span>
+                            {i === current && playing && <Bars />}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 ))}
-              </ul>
+                {groups.length === 0 && (
+                  <p className="px-4 py-6 text-sm text-muted">No songs match “{query}”.</p>
+                )}
+              </div>
             </div>
           )}
         </>
