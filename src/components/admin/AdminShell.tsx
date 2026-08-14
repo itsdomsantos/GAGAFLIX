@@ -17,6 +17,7 @@ export const btnGhostCls =
 const nav = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/videos", label: "Videos" },
+  { href: "/admin/movies", label: "Movies" },
   { href: "/admin/import", label: "Import" },
   { href: "/admin/eras", label: "Eras" },
   { href: "/admin/timeline", label: "Timeline" },

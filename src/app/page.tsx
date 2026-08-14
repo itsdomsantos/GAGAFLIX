@@ -1,17 +1,20 @@
 import EraCarousel from "@/components/EraCarousel";
 import Hero from "@/components/Hero";
 import Row from "@/components/Row";
-import { getEras, getFeatured, getRecent, getVideos } from "@/lib/data";
-import { VIDEO_TYPES, VIDEO_TYPE_LABELS } from "@/lib/types";
+import PosterRow from "@/components/PosterRow";
+import { getEras, getFeatured, getPosters, getRecent, getVideos } from "@/lib/data";
+import { POSTER_SECTION_LABELS, VIDEO_TYPES, VIDEO_TYPE_LABELS } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [featured, videos, recent, eras] = await Promise.all([
+  const [featured, videos, recent, eras, featuredPosters, moviePosters] = await Promise.all([
     getFeatured(),
     getVideos(),
     getRecent(12),
     getEras(),
+    getPosters("featured"),
+    getPosters("movies"),
   ]);
 
   const accents = Object.fromEntries(eras.map((e) => [e.slug, e.accent]));
@@ -29,7 +32,11 @@ export default async function HomePage() {
         </section>
       )}
 
+      <PosterRow title={POSTER_SECTION_LABELS.featured} posters={featuredPosters} />
+
       <EraCarousel eras={eras} />
+
+      <PosterRow title={POSTER_SECTION_LABELS.movies} posters={moviePosters} />
 
       <Row title="Recently added" videos={recent} accents={accents} />
       {/* limit to 20 videos per type */}

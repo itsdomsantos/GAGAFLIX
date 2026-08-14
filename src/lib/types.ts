@@ -34,6 +34,29 @@ export interface TimelineMoment {
   image_url: string | null;
 }
 
+/** Curated 4:5 poster cards on the homepage. Not tied to any era. */
+export type PosterSection = "featured" | "movies";
+
+export interface Poster {
+  id: string;
+  section: PosterSection;
+  title: string;
+  subtitle: string | null;
+  /** The 4:5 cover image (a pasted URL). */
+  cover_url: string | null;
+  /** Optional destination — external (Netflix, trailer…) or internal (/watch/…). */
+  link: string | null;
+  sort: number;
+  created_at: string;
+}
+
+export const POSTER_SECTIONS: PosterSection[] = ["featured", "movies"];
+
+export const POSTER_SECTION_LABELS: Record<PosterSection, string> = {
+  featured: "Featured",
+  movies: "Movies",
+};
+
 export const VIDEO_TYPES: VideoType[] = ["live", "mv", "interview", "fashion", "doc"];
 
 export const VIDEO_TYPE_LABELS: Record<VideoType, string> = {

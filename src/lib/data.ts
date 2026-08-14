@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { seedEras, seedTimeline, seedVideos } from "./seed";
 import { getServerClient, hasSupabase } from "./supabase";
-import type { Era, TimelineMoment, Video } from "./types";
+import type { Era, Poster, PosterSection, TimelineMoment, Video } from "./types";
 
 const IMAGE_EXTS = ["png", "jpg", "jpeg", "webp"];
 
@@ -105,4 +105,19 @@ export async function getTimeline(): Promise<TimelineMoment[]> {
 
 function sortMoments(moments: TimelineMoment[]): TimelineMoment[] {
   return [...moments].sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/** Curated poster cards for a homepage section (empty until you add some in /admin). */
+export async function getPosters(section: PosterSection): Promise<Poster[]> {
+  if (!hasSupabase) return [];
+  return fromSupabase(async () => {
+    const { data, error } = await getServerClient()
+      .from("posters")
+      .select("*")
+      .eq("section", section)
+      .order("sort", { ascending: true })
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return (data as Poster[]) ?? [];
+  }, []);
 }
