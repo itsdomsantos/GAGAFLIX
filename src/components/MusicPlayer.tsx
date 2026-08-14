@@ -127,6 +127,31 @@ export default function MusicPlayer() {
     };
   }, [playAt]);
 
+  const pauseMusic = useCallback(() => {
+    try {
+      playerRef.current?.pauseVideo?.();
+    } catch {
+      /* player not ready */
+    }
+  }, []);
+
+  // A video takes over: pause the music when the visitor opens a watch page
+  // (covers every embed type — YouTube, Vimeo, Drive… — which don't emit
+  // DOM play events).
+  useEffect(() => {
+    if (pathname.startsWith("/watch")) pauseMusic();
+  }, [pathname, pauseMusic]);
+
+  // Also pause for any native <video>/<audio> that starts playing anywhere.
+  useEffect(() => {
+    const onPlay = (e: Event) => {
+      const el = e.target as HTMLElement | null;
+      if (el && (el.tagName === "VIDEO" || el.tagName === "AUDIO")) pauseMusic();
+    };
+    document.addEventListener("play", onPlay, true);
+    return () => document.removeEventListener("play", onPlay, true);
+  }, [pauseMusic]);
+
   const toggle = useCallback(() => {
     const p = playerRef.current;
     if (!p?.getPlayerState) return;
