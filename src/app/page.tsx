@@ -26,7 +26,7 @@ export default async function HomePage() {
       key: v.id,
       title: v.title,
       subtitle: [VIDEO_TYPE_LABELS[v.type], v.date?.slice(0, 4)].filter(Boolean).join(" · "),
-      cover: autoThumbnail(v),
+      cover: v.poster_url || autoThumbnail(v),
       href: `/watch/${v.id}`,
       external: false,
     }));

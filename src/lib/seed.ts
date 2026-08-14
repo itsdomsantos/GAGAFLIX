@@ -169,6 +169,7 @@ const v = (
   event,
   date,
   thumbnail_url: null,
+  poster_url: null,
   featured,
   created_at: date,
 });

@@ -15,6 +15,7 @@ interface FormState {
   event: string;
   date: string;
   thumbnail_url: string;
+  poster_url: string;
   featured: boolean;
 }
 
@@ -27,6 +28,7 @@ const empty: FormState = {
   event: "",
   date: "",
   thumbnail_url: "",
+  poster_url: "",
   featured: false,
 };
 
@@ -62,6 +64,7 @@ export default function AdminVideos() {
       event: v.event ?? "",
       date: v.date ?? "",
       thumbnail_url: v.thumbnail_url ?? "",
+      poster_url: v.poster_url ?? "",
       featured: v.featured,
     });
     setError(null);
@@ -82,6 +85,7 @@ export default function AdminVideos() {
       event: form.event.trim() || null,
       date: form.date || null,
       thumbnail_url: form.thumbnail_url.trim() || null,
+      poster_url: form.poster_url.trim() || null,
       featured: form.featured,
     };
     const result = form.id
@@ -205,6 +209,27 @@ export default function AdminVideos() {
                 className="h-4 w-4 accent-[var(--accent)]" />
               Feature on the homepage (hero + the 4:5 “Featured” row)
             </label>
+            {form.featured && (
+              <>
+                <div className="md:col-span-2">
+                  <label htmlFor="v-poster" className={labelCls}>Featured poster (4:5 cover — recommended)</label>
+                  <input id="v-poster" type="url" className={inputCls} value={form.poster_url}
+                    onChange={(e) => setForm({ ...form, poster_url: e.target.value })}
+                    placeholder="https://…/poster.jpg — used for the 4:5 Featured card" />
+                </div>
+                <div className="md:col-span-2">
+                  {form.poster_url.trim() ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={form.poster_url.trim()} alt="Poster preview"
+                      className="aspect-[4/5] w-40 rounded-md object-cover ring-1 ring-line" />
+                  ) : (
+                    <p className="text-xs text-muted">
+                      No poster set — the Featured card will fall back to the 16:9 thumbnail, cropped.
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
           </div>
           <div className="mt-6 flex gap-3">
             <button type="submit" disabled={busy} className={btnCls}>

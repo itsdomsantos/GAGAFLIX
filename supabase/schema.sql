@@ -29,9 +29,13 @@ create table if not exists public.videos (
   event         text,
   date          date,
   thumbnail_url text,
+  poster_url    text,
   featured      boolean not null default false,
   created_at    timestamptz not null default now()
 );
+
+-- If you created the videos table before poster_url existed, run just this line:
+-- alter table public.videos add column if not exists poster_url text;
 
 -- Timeline milestones
 create table if not exists public.timeline_moments (

@@ -21,6 +21,8 @@ export interface Video {
   event: string | null;
   date: string | null;
   thumbnail_url: string | null;
+  /** A dedicated 4:5 cover for the homepage "Featured" poster row. */
+  poster_url: string | null;
   featured: boolean;
   created_at: string;
 }
