@@ -91,7 +91,21 @@ de uma chave grátis da YouTube Data API:
 
 Colar links individuais continua a funcionar sem esta chave.
 
-### 7. Logo
+### 7. Verificação automática de links (opcional)
+
+O site verifica sozinho se os vídeos ainda existem no YouTube. Os que forem
+removidos são **escondidos do público** e listados em **/admin/alerts** para
+reveres (corrigir o link ou apagar). Nada é apagado automaticamente.
+
+- O botão **"Check links now"** em /admin/alerts funciona **sem configuração**.
+- Para correr **sozinho todos os dias** (Vercel Cron → `/api/health`), adiciona
+  na Vercel (**Settings → Environment Variables**, sem `NEXT_PUBLIC_`):
+  - `SUPABASE_SERVICE_ROLE_KEY` = a *service_role key* do Supabase
+    (**Project Settings → API → service_role**; é secreta, só no servidor)
+  - `CRON_SECRET` = uma palavra-passe qualquer à tua escolha (a Vercel envia-a
+    automaticamente ao chamar o cron; protege o endpoint)
+
+### 8. Logo
 
 Adiciona os ficheiros do teu logo flame a `public/`:
 
