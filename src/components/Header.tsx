@@ -8,6 +8,7 @@ const links = [
   { href: "/", label: "Home" },
   { href: "/eras", label: "Eras" },
   { href: "/timeline", label: "Timeline" },
+  { href: "/news", label: "News" },
 ];
 
 export default function Header() {

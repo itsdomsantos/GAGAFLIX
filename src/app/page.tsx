@@ -1,20 +1,24 @@
+import Link from "next/link";
 import EraCarousel from "@/components/EraCarousel";
 import Hero from "@/components/Hero";
 import Row from "@/components/Row";
 import PosterRow from "@/components/PosterRow";
+import NewsCard from "@/components/NewsCard";
 import { autoThumbnail } from "@/lib/player";
 import { getEras, getFeatured, getMovies, getRecent, getVideos } from "@/lib/data";
+import { getNews } from "@/lib/news";
 import { VIDEO_TYPES, VIDEO_TYPE_LABELS } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [featured, videos, recent, eras, movies] = await Promise.all([
+  const [featured, videos, recent, eras, movies, news] = await Promise.all([
     getFeatured(),
     getVideos(),
     getRecent(12),
     getEras(),
     getMovies(),
+    getNews(6),
   ]);
 
   const accents = Object.fromEntries(eras.map((e) => [e.slug, e.accent]));
@@ -61,6 +65,23 @@ export default async function HomePage() {
       <PosterRow title="Movies" items={movieItems} />
 
       <Row title="Recently added" videos={recent} accents={accents} />
+
+      {news.length > 0 && (
+        <section className="mt-10 px-4 sm:px-6">
+          <div className="flex items-baseline justify-between gap-4">
+            <h2 className="text-lg font-semibold tracking-wide">Latest news</h2>
+            <Link href="/news" className="text-sm text-muted transition-colors hover:text-accent">
+              All news →
+            </Link>
+          </div>
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {news.map((n) => (
+              <NewsCard key={n.link} item={n} />
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* limit to 20 videos per type */}
       {VIDEO_TYPES.map((type) => {
         const videosForType = videos.filter((v) => v.type === type);

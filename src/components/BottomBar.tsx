@@ -41,6 +41,16 @@ const items = [
     ),
   },
   {
+    href: "/news",
+    label: "News",
+    icon: (
+      <>
+        <rect x="3" y="4" width="18" height="16" rx="1.5" stroke="currentColor" strokeWidth="2" fill="none" />
+        <path d="M7 8h7M7 12h10M7 16h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      </>
+    ),
+  },
+  {
     href: "/search",
     label: "Search",
     icon: (
