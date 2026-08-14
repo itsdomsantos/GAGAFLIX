@@ -34,6 +34,58 @@ function pick(block: string, tag: string): string | null {
   return m ? decode(m[1]) : null;
 }
 
+function entities(s: string): string {
+  return s
+    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16)))
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&")
+    .trim();
+}
+
+export interface ArticlePreview {
+  image: string | null;
+  description: string | null;
+}
+
+/**
+ * Best-effort preview of an article: its OpenGraph share image and summary —
+ * the metadata sites publish specifically to be shown when their links are
+ * shared. Used by the in-site news reader. Returns nulls (never throws) when
+ * the source can't be reached or exposes no preview, so the reader falls back
+ * to a branded placeholder.
+ */
+export async function getArticlePreview(url: string): Promise<ArticlePreview> {
+  try {
+    const res = await fetch(url, {
+      next: { revalidate: 3600 },
+      headers: { "user-agent": "Mozilla/5.0 (compatible; GagaflixBot/1.0)" },
+    });
+    if (!res.ok) return { image: null, description: null };
+    const html = (await res.text()).slice(0, 250_000);
+
+    const meta = (prop: string): string | null => {
+      const patterns = [
+        new RegExp(`<meta[^>]+(?:property|name)=["']og:${prop}["'][^>]+content=["']([^"']*)["']`, "i"),
+        new RegExp(`<meta[^>]+content=["']([^"']*)["'][^>]+(?:property|name)=["']og:${prop}["']`, "i"),
+      ];
+      for (const p of patterns) {
+        const m = html.match(p);
+        if (m && m[1]) return entities(m[1]);
+      }
+      return null;
+    };
+
+    return { image: meta("image"), description: meta("description") };
+  } catch {
+    return { image: null, description: null };
+  }
+}
+
 export async function getNews(limit = 24): Promise<NewsItem[]> {
   try {
     const res = await fetch(FEED, {

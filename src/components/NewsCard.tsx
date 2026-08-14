@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { NewsItem } from "@/lib/news";
 
 function hostOf(url: string | null): string | null {
@@ -30,10 +31,8 @@ export default function NewsCard({ item }: { item: NewsItem }) {
   const when = timeAgo(item.date);
 
   return (
-    <a
-      href={item.link}
-      target="_blank"
-      rel="noopener noreferrer"
+    <Link
+      href={`/news/read?u=${encodeURIComponent(item.link)}`}
       className="group flex gap-3 rounded-lg border border-line bg-surface p-3 transition-colors hover:border-accent"
     >
       <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded bg-surface-2">
@@ -53,6 +52,6 @@ export default function NewsCard({ item }: { item: NewsItem }) {
           {when ? ` · ${when}` : ""}
         </span>
       </span>
-    </a>
+    </Link>
   );
 }
