@@ -18,7 +18,7 @@ export default async function HomePage() {
     getRecent(12),
     getEras(),
     getMovies(),
-    getNews(6),
+    getNews(10),
   ]);
 
   const accents = Object.fromEntries(eras.map((e) => [e.slug, e.accent]));

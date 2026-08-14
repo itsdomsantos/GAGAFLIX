@@ -64,6 +64,10 @@ export async function getNews(limit = 24): Promise<NewsItem[]> {
         title = title.slice(0, -(source.length + 3)).trim();
       }
 
+      // Relevance filter: keep only stories that actually name Gaga in the
+      // headline, dropping articles where she's just a passing mention.
+      if (!title.toLowerCase().includes("gaga")) continue;
+
       out.push({ title, link, source, sourceUrl, date: pick(block, "pubDate") });
       if (out.length >= limit) break;
     }
