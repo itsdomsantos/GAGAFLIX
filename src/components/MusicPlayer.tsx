@@ -166,7 +166,7 @@ export default function MusicPlayer() {
           <button
             onClick={() => setOpen((o) => !o)}
             aria-label={open ? "Close music" : "Open music"}
-            className="fixed bottom-20 left-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-black shadow-[0_0_28px_-4px_var(--accent)] transition-transform hover:scale-105 md:bottom-6 md:left-6"
+            className="fixed bottom-20 right-[5.25rem] z-50 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-black shadow-[0_0_28px_-4px_var(--accent)] transition-transform hover:scale-105 md:bottom-6 md:right-[5.75rem]"
           >
             {track ? (
               <Vinyl cover={track.cover} playing={playing} size={56} />
@@ -178,7 +178,7 @@ export default function MusicPlayer() {
           </button>
 
           {open && (
-            <div className="fixed bottom-36 left-4 z-50 flex max-h-[70vh] w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-xl border border-line bg-surface shadow-2xl sm:left-6 sm:w-80 md:bottom-24">
+            <div className="fixed bottom-36 right-4 z-50 flex max-h-[70vh] w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-xl border border-line bg-surface shadow-2xl sm:right-6 sm:w-80 md:bottom-24">
               <header className="flex items-center gap-3 border-b border-line px-4 py-3">
                 <span className="flex h-8 w-8 items-center justify-center">
                   <Vinyl cover={track?.cover ?? null} playing={playing} size={32} />
