@@ -38,7 +38,7 @@ export default function RootLayout({
         <main className="flex-1">{children}</main>
         <footer className="border-t border-line px-6 py-8 text-center text-sm text-muted">
           <span className="font-display text-lg chrome-text align-middle mr-2">GAGAFLIX</span>
-          by Little Monsters, to Little Monsters. Fan site — every video plays from its
+          by Little Monsters, to Little Monsters. Every video plays from its
           original platform.
         </footer>
         <BottomBar />
