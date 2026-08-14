@@ -87,6 +87,7 @@ export default function MusicPlayer() {
       const sortOf = (slug: string | null) => (slug ? eraSort.get(slug) ?? 999 : 999);
 
       const built = vids
+        .filter((v) => !v.unavailable_since)
         .map((v) => ({ v, ytId: youtubeId(v.url) }))
         .filter((x): x is { v: Video; ytId: string } => Boolean(x.ytId))
         // Album order first, then newest within the album.

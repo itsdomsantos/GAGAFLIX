@@ -31,11 +31,20 @@ create table if not exists public.videos (
   thumbnail_url text,
   poster_url    text,
   featured      boolean not null default false,
+  -- Link health (filled by the /api/health checker). unavailable_since being
+  -- set means the video is hidden from the public site and waiting for review
+  -- on /admin/alerts. Nothing is ever auto-deleted.
+  unavailable_since  timestamptz,
+  unavailable_reason text,
+  last_checked       timestamptz,
   created_at    timestamptz not null default now()
 );
 
--- If you created the videos table before poster_url existed, run just this line:
+-- If you created the videos table earlier, run just these lines to catch up:
 -- alter table public.videos add column if not exists poster_url text;
+-- alter table public.videos add column if not exists unavailable_since timestamptz;
+-- alter table public.videos add column if not exists unavailable_reason text;
+-- alter table public.videos add column if not exists last_checked timestamptz;
 
 -- Timeline milestones
 create table if not exists public.timeline_moments (

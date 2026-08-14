@@ -68,7 +68,8 @@ export async function getVideos(): Promise<Video[]> {
       .select("*")
       .order("date", { ascending: false });
     if (error) throw error;
-    return (data as Video[]) ?? [];
+    // Hide videos the link checker flagged as gone (pending review in /admin/alerts).
+    return ((data as Video[]) ?? []).filter((v) => !v.unavailable_since);
   }, seedVideos);
 }
 

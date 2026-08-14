@@ -171,6 +171,9 @@ const v = (
   thumbnail_url: null,
   poster_url: null,
   featured,
+  unavailable_since: null,
+  unavailable_reason: null,
+  last_checked: null,
   created_at: date,
 });
 
