@@ -92,6 +92,30 @@ video::-webkit-media-controls-panel {
   }
 }
 
+/* Vinil do mini-player de música — disco a rodar com a capa ao centro */
+@keyframes vinyl-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.vinyl-spin {
+  animation: vinyl-spin 4.5s linear infinite;
+}
+.vinyl-face {
+  background-color: #0c0c10;
+  background-image:
+    repeating-radial-gradient(
+      circle at 50% 50%,
+      rgba(255, 255, 255, 0.05) 0 1px,
+      transparent 1px 3.5px
+    ),
+    radial-gradient(circle at 50% 50%, #1c1c24 0%, #050507 72%);
+}
+/* Brilho fixo por cima do disco (não roda) — dá o reflexo de vinil */
+.vinyl-sheen {
+  background: radial-gradient(circle at 34% 26%, rgba(255, 255, 255, 0.28), transparent 44%);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

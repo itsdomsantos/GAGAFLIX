@@ -1,0 +1,397 @@
+"use client";
+
+import { usePathname } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { autoThumbnail, youtubeId } from "@/lib/player";
+import { seedEras, seedVideos } from "@/lib/seed";
+import { getBrowserClient, hasSupabase } from "@/lib/supabase";
+import type { Era, Video } from "@/lib/types";
+
+interface Track {
+  id: string;
+  title: string;
+  ytId: string;
+  cover: string | null;
+  year: string | null;
+  album: string | null;
+}
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+declare global {
+  interface Window {
+    YT?: any;
+    onYouTubeIframeAPIReady?: () => void;
+  }
+}
+
+/** Loads the YouTube IFrame API once and resolves with window.YT. */
+function loadYT(): Promise<any> {
+  return new Promise((resolve) => {
+    if (window.YT?.Player) return resolve(window.YT);
+    if (!document.getElementById("gf-yt-api")) {
+      const tag = document.createElement("script");
+      tag.id = "gf-yt-api";
+      tag.src = "https://www.youtube.com/iframe_api";
+      document.body.appendChild(tag);
+    }
+    const prev = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => {
+      prev?.();
+      resolve(window.YT);
+    };
+  });
+}
+
+/**
+ * Floating music player. Plays the audio of the site's Music Videos (YouTube
+ * only) through a hidden player, and shows a spinning vinyl with the track's
+ * cover in the centre. Keeps playing while the visitor browses the site.
+ */
+export default function MusicPlayer() {
+  const pathname = usePathname();
+  const [tracks, setTracks] = useState<Track[]>([]);
+  const [current, setCurrent] = useState<number | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+
+  const playerRef = useRef<any>(null);
+  const tracksRef = useRef<Track[]>([]);
+  const currentRef = useRef<number | null>(null);
+  tracksRef.current = tracks;
+  currentRef.current = current;
+
+  // Build the track list from Music Videos (YouTube sources only), grouped and
+  // ordered by album (the site's eras).
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      let vids: Video[] = [];
+      let eras: Era[] = [];
+      if (hasSupabase) {
+        const supabase = getBrowserClient();
+        const [v, e] = await Promise.all([
+          supabase.from("videos").select("*").eq("type", "mv"),
+          supabase.from("eras").select("*"),
+        ]);
+        vids = (v.data as Video[]) ?? [];
+        eras = (e.data as Era[]) ?? [];
+      } else {
+        vids = seedVideos.filter((v) => v.type === "mv");
+        eras = seedEras;
+      }
+      if (!alive) return;
+
+      const eraName = new Map(eras.map((e) => [e.slug, e.name]));
+      const eraSort = new Map(eras.map((e) => [e.slug, e.sort]));
+      const sortOf = (slug: string | null) => (slug ? eraSort.get(slug) ?? 999 : 999);
+
+      const built = vids
+        .map((v) => ({ v, ytId: youtubeId(v.url) }))
+        .filter((x): x is { v: Video; ytId: string } => Boolean(x.ytId))
+        // Album order first, then newest within the album.
+        .sort((a, b) => {
+          const s = sortOf(a.v.era_slug) - sortOf(b.v.era_slug);
+          return s !== 0 ? s : (b.v.date ?? "").localeCompare(a.v.date ?? "");
+        })
+        .map(({ v, ytId }) => ({
+          id: v.id,
+          title: v.title,
+          ytId,
+          cover: v.poster_url || autoThumbnail(v),
+          year: v.date ? v.date.slice(0, 4) : null,
+          album: v.era_slug ? eraName.get(v.era_slug) ?? null : null,
+        }));
+      setTracks(built);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const playAt = useCallback((i: number) => {
+    const t = tracksRef.current;
+    if (!t[i] || !playerRef.current?.loadVideoById) return;
+    setCurrent(i);
+    setOpen(true);
+    playerRef.current.loadVideoById(t[i].ytId);
+  }, []);
+
+  // Create the hidden YouTube player once the API is ready.
+  useEffect(() => {
+    let alive = true;
+    loadYT().then((YT) => {
+      if (!alive) return;
+      playerRef.current = new YT.Player("gf-yt-audio", {
+        height: "1",
+        width: "1",
+        playerVars: { playsinline: 1 },
+        events: {
+          onStateChange: (e: any) => {
+            if (e.data === YT.PlayerState.PLAYING) setPlaying(true);
+            else if (e.data === YT.PlayerState.PAUSED) setPlaying(false);
+            else if (e.data === YT.PlayerState.ENDED) {
+              const t = tracksRef.current;
+              const c = currentRef.current;
+              if (c != null && t.length > 0) playAt((c + 1) % t.length);
+            }
+          },
+        },
+      });
+    });
+    return () => {
+      alive = false;
+    };
+  }, [playAt]);
+
+  const pauseMusic = useCallback(() => {
+    try {
+      playerRef.current?.pauseVideo?.();
+    } catch {
+      /* player not ready */
+    }
+  }, []);
+
+  // A video takes over: pause the music when the visitor opens a watch page
+  // (covers every embed type — YouTube, Vimeo, Drive… — which don't emit
+  // DOM play events).
+  useEffect(() => {
+    if (pathname.startsWith("/watch")) pauseMusic();
+  }, [pathname, pauseMusic]);
+
+  // Also pause for any native <video>/<audio> that starts playing anywhere.
+  useEffect(() => {
+    const onPlay = (e: Event) => {
+      const el = e.target as HTMLElement | null;
+      if (el && (el.tagName === "VIDEO" || el.tagName === "AUDIO")) pauseMusic();
+    };
+    document.addEventListener("play", onPlay, true);
+    return () => document.removeEventListener("play", onPlay, true);
+  }, [pauseMusic]);
+
+  const toggle = useCallback(() => {
+    const p = playerRef.current;
+    if (!p?.getPlayerState) return;
+    try {
+      if (p.getPlayerState() === 1) p.pauseVideo();
+      else p.playVideo();
+    } catch {
+      /* player not ready */
+    }
+  }, []);
+
+  const step = useCallback(
+    (delta: number) => {
+      const t = tracksRef.current;
+      const c = currentRef.current;
+      if (t.length === 0) return;
+      const base = c ?? 0;
+      playAt((base + delta + t.length) % t.length);
+    },
+    [playAt],
+  );
+
+  const track = current != null ? tracks[current] : null;
+
+  // Group tracks by album (era), keeping each track's flat index for playback,
+  // and apply the search filter.
+  const groups = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const out: { album: string; items: { t: Track; i: number }[] }[] = [];
+    tracks.forEach((t, i) => {
+      if (q && !t.title.toLowerCase().includes(q) && !(t.album ?? "").toLowerCase().includes(q)) {
+        return;
+      }
+      const album = t.album ?? "Other";
+      let g = out[out.length - 1];
+      if (!g || g.album !== album) {
+        g = { album, items: [] };
+        out.push(g);
+      }
+      g.items.push({ t, i });
+    });
+    return out;
+  }, [tracks, query]);
+
+  // The hidden player must stay mounted everywhere; only the UI hides on /admin.
+  const showUI = !pathname.startsWith("/admin") && tracks.length > 0;
+
+  return (
+    <>
+      {/* Hidden audio player — kept off-screen but present so audio persists. */}
+      <div aria-hidden className="pointer-events-none fixed bottom-0 left-0 h-px w-px overflow-hidden opacity-0">
+        <div id="gf-yt-audio" />
+      </div>
+
+      {showUI && (
+        <>
+          <button
+            onClick={() => setOpen((o) => !o)}
+            aria-label={open ? "Close music" : "Open music"}
+            className="fixed bottom-20 right-[5.25rem] z-50 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-black shadow-[0_0_28px_-4px_var(--accent)] transition-transform hover:scale-105 md:bottom-6 md:right-[5.75rem]"
+          >
+            {track ? (
+              <Vinyl cover={track.cover} playing={playing} size={56} />
+            ) : (
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M9 17.5a2.5 2.5 0 1 1-2.5-2.5c.4 0 .77.09 1.1.24V6l9-2v9.5a2.5 2.5 0 1 1-2.5-2.5c.4 0 .77.09 1.1.24V6.3L9 7.7v9.8Z" />
+              </svg>
+            )}
+          </button>
+
+          {open && (
+            <div className="fixed bottom-36 right-4 z-50 flex max-h-[70vh] w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-xl border border-line bg-surface shadow-2xl sm:right-6 sm:w-80 md:bottom-24">
+              <header className="flex items-center gap-3 border-b border-line px-4 py-3">
+                <span className="flex h-8 w-8 items-center justify-center">
+                  <Vinyl cover={track?.cover ?? null} playing={playing} size={32} />
+                </span>
+                <div className="min-w-0">
+                  <p className="font-display text-lg leading-none chrome-text">Gaga Radio</p>
+                  <p className="text-[11px] text-muted">music videos, audio only</p>
+                </div>
+                <button
+                  onClick={() => setOpen(false)}
+                  aria-label="Close"
+                  className="ml-auto text-muted transition-colors hover:text-text"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                </button>
+              </header>
+
+              {track && (
+                <div className="flex items-center gap-3 border-b border-line px-4 py-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{track.title}</p>
+                    <p className="text-xs text-muted">{track.year ?? "Music video"}</p>
+                  </div>
+                  <button onClick={() => step(-1)} aria-label="Previous" className="text-muted transition-colors hover:text-text">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <path d="M7 6h2v12H7zM20 6v12l-9-6z" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={toggle}
+                    aria-label={playing ? "Pause" : "Play"}
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-black transition-transform hover:scale-105"
+                  >
+                    {playing ? (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M7 5h4v14H7zM13 5h4v14h-4z" />
+                      </svg>
+                    ) : (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M8 5v14l11-7L8 5Z" />
+                      </svg>
+                    )}
+                  </button>
+                  <button onClick={() => step(1)} aria-label="Next" className="text-muted transition-colors hover:text-text">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <path d="M15 6h2v12h-2zM4 6v12l9-6z" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+
+              <div className="border-b border-line p-3">
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search songs or albums…"
+                  className="w-full rounded-full border border-line bg-surface-2 px-4 py-2 text-sm outline-none transition-colors placeholder:text-muted focus:border-accent"
+                />
+              </div>
+
+              <div className="flex-1 overflow-y-auto py-1">
+                {groups.map((g) => (
+                  <div key={g.album}>
+                    <p className="sticky top-0 bg-surface/95 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted backdrop-blur">
+                      {g.album}
+                    </p>
+                    <ul>
+                      {g.items.map(({ t, i }) => (
+                        <li key={t.id}>
+                          <button
+                            onClick={() => playAt(i)}
+                            className={`flex w-full items-center gap-3 px-4 py-2 text-left transition-colors hover:bg-surface-2 ${
+                              i === current ? "bg-surface-2" : ""
+                            }`}
+                          >
+                            <span className="h-9 w-9 shrink-0 overflow-hidden rounded bg-surface-2">
+                              {t.cover && (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={t.cover} alt="" loading="lazy" className="h-full w-full object-cover" />
+                              )}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className={`block truncate text-sm ${i === current ? "text-accent" : ""}`}>
+                                {t.title}
+                              </span>
+                              {t.year && <span className="block text-xs text-muted">{t.year}</span>}
+                            </span>
+                            {i === current && playing && <Bars />}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+                {groups.length === 0 && (
+                  <p className="px-4 py-6 text-sm text-muted">No songs match “{query}”.</p>
+                )}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </>
+  );
+}
+
+/** The spinning record: grooves + centre cover + a fixed sheen. */
+function Vinyl({ cover, playing, size }: { cover: string | null; playing: boolean; size: number }) {
+  return (
+    <span
+      className="relative block overflow-hidden rounded-full ring-1 ring-black/40"
+      style={{ height: size, width: size }}
+    >
+      <span
+        className="vinyl-face vinyl-spin absolute inset-0 rounded-full"
+        style={{ animationPlayState: playing ? "running" : "paused" }}
+      >
+        {cover && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={cover}
+            alt=""
+            className="absolute left-1/2 top-1/2 h-1/2 w-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full object-cover"
+          />
+        )}
+        {/* Centre spindle hole */}
+        <span className="absolute left-1/2 top-1/2 h-1 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-bg ring-1 ring-black/50" />
+      </span>
+      <span className="vinyl-sheen pointer-events-none absolute inset-0 rounded-full" />
+    </span>
+  );
+}
+
+/** Little animated equaliser bars on the now-playing row. */
+function Bars() {
+  return (
+    <span className="flex items-end gap-[2px]" aria-hidden>
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className="w-[3px] rounded-full bg-accent"
+          style={{
+            height: 12,
+            animation: "hero-scroll-bounce 0.9s ease-in-out infinite",
+            animationDelay: `${i * 0.15}s`,
+          }}
+        />
+      ))}
+    </span>
+  );
+}
