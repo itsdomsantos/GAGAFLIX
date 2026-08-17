@@ -20,7 +20,9 @@ export default function Hero({ video, era }: { video: Video; era: Era | null }) 
   const contentRef = useRef<HTMLDivElement>(null);
   const veilRef = useRef<HTMLDivElement>(null);
   const cueRef = useRef<HTMLDivElement>(null);
-  const [videoOn, setVideoOn] = useState(false);
+  // The sharp poster stays on top until the clip is really playing frames
+  // (past its start point), then fades away — hiding the grey buffering state.
+  const [revealed, setRevealed] = useState(false);
 
   // Parallax: the backdrop scales, sinks and darkens as the hero scrolls away.
   useEffect(() => {
@@ -102,8 +104,7 @@ export default function Hero({ video, era }: { video: Video; era: Era | null }) 
           },
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           onStateChange: (e: any) => {
-            if (e.data === YT.PlayerState.PLAYING) setVideoOn(true);
-            else if (e.data === YT.PlayerState.ENDED) {
+            if (e.data === YT.PlayerState.ENDED) {
               try {
                 e.target.seekTo(START_SECONDS);
                 e.target.playVideo();
@@ -117,13 +118,14 @@ export default function Hero({ video, era }: { video: Video; era: Era | null }) 
 
       iv = setInterval(() => {
         try {
-          if (player?.getCurrentTime && player.getCurrentTime() >= START_SECONDS + LOOP_SECONDS) {
-            player.seekTo(START_SECONDS);
-          }
+          const t = player?.getCurrentTime ? player.getCurrentTime() : 0;
+          // Real playback has started (advanced past the seek point) → reveal.
+          if (t >= START_SECONDS + 0.4) setRevealed(true);
+          if (t >= START_SECONDS + LOOP_SECONDS) player.seekTo(START_SECONDS);
         } catch {
           /* ignore */
         }
-      }, 500);
+      }, 300);
     });
 
     return () => {
@@ -134,42 +136,43 @@ export default function Hero({ video, era }: { video: Video; era: Era | null }) 
       } catch {
         /* ignore */
       }
-      setVideoOn(false);
+      setRevealed(false);
     };
   }, [yt]);
 
   return (
     <section ref={sectionRef} className="relative flex min-h-[72vh] items-end overflow-hidden">
       <div ref={mediaRef} className="absolute inset-0 overflow-hidden will-change-transform">
+        {yt && (
+          <div
+            key={yt}
+            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+            style={{
+              width: "100vw",
+              height: "56.25vw",
+              minWidth: "177.78vh",
+              minHeight: "100vh",
+            }}
+          >
+            <div id="hero-yt" className="h-full w-full" />
+          </div>
+        )}
+
         {poster && (
-          // Poster underneath: covers the section until the clip is playing.
+          // Sharp poster on top; fades out only once real frames are playing,
+          // so the player's grey buffering state is never seen.
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={poster}
             alt=""
-            className="absolute inset-0 h-full w-full object-cover"
+            className="pointer-events-none absolute inset-0 h-full w-full object-cover transition-opacity duration-1000"
+            style={{ opacity: revealed ? 0 : 1 }}
             onError={(e) => {
               if (fallbackPoster && e.currentTarget.src !== fallbackPoster) {
                 e.currentTarget.src = fallbackPoster;
               }
             }}
           />
-        )}
-
-        {yt && (
-          <div
-            key={yt}
-            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transition-opacity duration-1000"
-            style={{
-              width: "100vw",
-              height: "56.25vw",
-              minWidth: "177.78vh",
-              minHeight: "100vh",
-              opacity: videoOn ? 1 : 0,
-            }}
-          >
-            <div id="hero-yt" className="h-full w-full" />
-          </div>
         )}
       </div>
 
