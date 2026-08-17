@@ -78,11 +78,14 @@ export async function getVideo(id: string): Promise<Video | null> {
   return videos.find((v) => v.id === id) ?? null;
 }
 
-/** O destaque do hero: o vídeo marcado como featured mais recente, ou o mais novo. */
+/**
+ * O destaque do hero: o vídeo escolhido explicitamente (is_hero); se nenhum
+ * estiver escolhido, cai no featured mais recente e, por fim, no mais novo.
+ */
 export async function getFeatured(): Promise<Video | null> {
   const videos = await getVideos();
   if (videos.length === 0) return null;
-  return videos.find((v) => v.featured) ?? videos[0];
+  return videos.find((v) => v.is_hero) ?? videos.find((v) => v.featured) ?? videos[0];
 }
 
 export async function getRecent(limit = 12): Promise<Video[]> {

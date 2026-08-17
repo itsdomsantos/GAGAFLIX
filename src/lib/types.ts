@@ -24,6 +24,8 @@ export interface Video {
   /** A dedicated 4:5 cover for the homepage "Featured" poster row. */
   poster_url: string | null;
   featured: boolean;
+  /** The single video shown as the big homepage hero banner. At most one is true. */
+  is_hero: boolean;
   /** Set when the link checker found the source gone — hidden from the public site, pending review. */
   unavailable_since: string | null;
   unavailable_reason: string | null;

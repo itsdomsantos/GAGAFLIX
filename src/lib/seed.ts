@@ -160,6 +160,7 @@ const v = (
   event: string | null,
   date: string,
   featured = false,
+  is_hero = false,
 ): Video => ({
   id,
   title,
@@ -171,6 +172,7 @@ const v = (
   thumbnail_url: null,
   poster_url: null,
   featured,
+  is_hero,
   unavailable_since: null,
   unavailable_reason: null,
   last_checked: null,
@@ -178,7 +180,7 @@ const v = (
 });
 
 export const seedVideos: Video[] = [
-  v("abracadabra", "Abracadabra", "https://www.youtube.com/watch?v=vBynw9Isr28", "mv", "mayhem", "Official Music Video", "2025-02-03", true),
+  v("abracadabra", "Abracadabra", "https://www.youtube.com/watch?v=vBynw9Isr28", "mv", "mayhem", "Official Music Video", "2025-02-03", true, true),
   v("abracadabra-snl", "Abracadabra — Saturday Night Live", "https://www.youtube.com/watch?v=NLviy39Q1A8", "live", "mayhem", "SNL 50", "2025-03-09"),
   v("disease", "Disease", "https://www.youtube.com/watch?v=fmC6b6_ovZY", "mv", "mayhem", "Official Music Video", "2024-11-01"),
   v("rain-on-me", "Rain On Me (with Ariana Grande)", "https://www.youtube.com/watch?v=AoAm4om0wTs", "mv", "chromatica", "Official Music Video", "2020-05-22"),
