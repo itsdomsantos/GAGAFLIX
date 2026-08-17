@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Archivo, Metal_Mania } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
 import BottomBar from "@/components/BottomBar";
+import InstallDock from "@/components/InstallDock";
 import KeyboardShortcuts from "@/components/KeyboardShortcuts";
 import ChatBot from "@/components/ChatBot";
 import EraTransition from "@/components/EraTransition";
@@ -24,6 +25,17 @@ export const metadata: Metadata = {
   title: "GAGAFLIX — The Ultimate Lady Gaga Experience",
   description:
     "The whole Lady Gaga universe in one place: live performances, music videos, interviews and more. By Little Monsters, to Little Monsters.",
+  manifest: "/manifest.webmanifest",
+  // Makes the iOS home-screen shortcut open full-screen and show just "GAGAFLIX".
+  appleWebApp: {
+    capable: true,
+    title: "GAGAFLIX",
+    statusBarStyle: "black-translucent",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0a0a0d",
 };
 
 export default function RootLayout({
@@ -43,6 +55,7 @@ export default function RootLayout({
           original platform.
         </footer>
         <BottomBar />
+        <InstallDock />
         <ChatBot />
         <MusicPlayer />
         <EraTransition />
