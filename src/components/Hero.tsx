@@ -2,27 +2,28 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { heroThumbnail, youtubeId } from "@/lib/player";
+import { autoThumbnail, heroThumbnail, youtubeId } from "@/lib/player";
+import { loadYouTubeAPI } from "@/lib/youtube";
 import { VIDEO_TYPE_LABELS, type Era, type Video } from "@/lib/types";
 
-export default function Hero({ video, era }: { video: Video; era: Era | null }) {
-  const backdrop = heroThumbnail(video);
-  const yt = youtubeId(video.url);
+/** Loop the first N seconds of the hero preview. */
+const LOOP_SECONDS = 20;
 
-  // O vídeo de fundo só entra depois de montar (evita SSR) e se o utilizador
-  // não pediu menos movimento. A thumbnail fica por baixo como poster.
-  const [playVideo, setPlayVideo] = useState(false);
-  const [videoReady, setVideoReady] = useState(false);
+export default function Hero({ video, era }: { video: Video; era: Era | null }) {
+  const poster = heroThumbnail(video);
+  const fallbackPoster = autoThumbnail(video); // hqdefault — always exists for real videos
+  const yt = youtubeId(video.url);
 
   const sectionRef = useRef<HTMLElement>(null);
   const mediaRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const veilRef = useRef<HTMLDivElement>(null);
   const cueRef = useRef<HTMLDivElement>(null);
+  const [videoOn, setVideoOn] = useState(false);
 
+  // Parallax: the backdrop scales, sinks and darkens as the hero scrolls away.
   useEffect(() => {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (!reduce && yt) setPlayVideo(true);
     if (reduce) return;
 
     let raf = 0;
@@ -30,9 +31,7 @@ export default function Hero({ video, era }: { video: Video; era: Era | null }) 
       raf = 0;
       const section = sectionRef.current;
       if (!section) return;
-
       const height = section.offsetHeight || 1;
-      // Progresso 0 → 1 conforme o hero sai do topo do ecrã.
       const p = Math.min(Math.max(-section.getBoundingClientRect().top / height, 0), 1);
 
       if (mediaRef.current) {
@@ -43,18 +42,13 @@ export default function Hero({ video, era }: { video: Video; era: Era | null }) 
         contentRef.current.style.transform = `translateY(${p * -64}px)`;
         contentRef.current.style.opacity = `${Math.max(1 - p * 1.35, 0)}`;
       }
-      if (veilRef.current) {
-        veilRef.current.style.opacity = `${Math.min(p * 1.2, 1)}`;
-      }
-      if (cueRef.current) {
-        cueRef.current.style.opacity = `${Math.max(1 - p * 4, 0)}`;
-      }
+      if (veilRef.current) veilRef.current.style.opacity = `${Math.min(p * 1.2, 1)}`;
+      if (cueRef.current) cueRef.current.style.opacity = `${Math.max(1 - p * 4, 0)}`;
     };
 
     const onScroll = () => {
       if (!raf) raf = requestAnimationFrame(update);
     };
-
     update();
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll, { passive: true });
@@ -63,57 +57,124 @@ export default function Hero({ video, era }: { video: Video; era: Era | null }) 
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
     };
+  }, []);
+
+  // Muted autoplay of the featured clip, looping only its first LOOP_SECONDS.
+  // This also guarantees a live backdrop even when a video's static thumbnail
+  // is missing/broken.
+  useEffect(() => {
+    if (!yt) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    let alive = true;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let player: any;
+    let iv: ReturnType<typeof setInterval> | undefined;
+
+    loadYouTubeAPI().then((YT) => {
+      if (!alive || !document.getElementById("hero-yt")) return;
+      player = new YT.Player("hero-yt", {
+        videoId: yt,
+        width: "100%",
+        height: "100%",
+        playerVars: {
+          autoplay: 1,
+          mute: 1,
+          controls: 0,
+          playsinline: 1,
+          modestbranding: 1,
+          rel: 0,
+          fs: 0,
+          disablekb: 1,
+          iv_load_policy: 3,
+          start: 0,
+        },
+        events: {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          onReady: (e: any) => {
+            try {
+              e.target.mute();
+              e.target.playVideo();
+            } catch {
+              /* ignore */
+            }
+          },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          onStateChange: (e: any) => {
+            if (e.data === YT.PlayerState.PLAYING) setVideoOn(true);
+            else if (e.data === YT.PlayerState.ENDED) {
+              try {
+                e.target.seekTo(0);
+                e.target.playVideo();
+              } catch {
+                /* ignore */
+              }
+            }
+          },
+        },
+      });
+
+      iv = setInterval(() => {
+        try {
+          if (player?.getCurrentTime && player.getCurrentTime() >= LOOP_SECONDS) {
+            player.seekTo(0);
+          }
+        } catch {
+          /* ignore */
+        }
+      }, 500);
+    });
+
+    return () => {
+      alive = false;
+      if (iv) clearInterval(iv);
+      try {
+        player?.destroy?.();
+      } catch {
+        /* ignore */
+      }
+      setVideoOn(false);
+    };
   }, [yt]);
 
-  const embedUrl = yt
-    ? `https://www.youtube-nocookie.com/embed/${yt}?autoplay=1&mute=1&loop=1&playlist=${yt}&controls=0&modestbranding=1&rel=0&playsinline=1&disablekb=1&fs=0&iv_load_policy=3`
-    : null;
-
   return (
-    <section
-      ref={sectionRef}
-      className="relative flex min-h-[72vh] items-end overflow-hidden"
-    >
-      <div ref={mediaRef} className="absolute inset-0 will-change-transform">
-        {backdrop && (
-          // Poster: a thumbnail cobre a secção enquanto o vídeo ainda não toca.
+    <section ref={sectionRef} className="relative flex min-h-[72vh] items-end overflow-hidden">
+      <div ref={mediaRef} className="absolute inset-0 overflow-hidden will-change-transform">
+        {poster && (
+          // Poster underneath: covers the section until the clip is playing.
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={backdrop}
+            src={poster}
             alt=""
             className="absolute inset-0 h-full w-full object-cover"
+            onError={(e) => {
+              if (fallbackPoster && e.currentTarget.src !== fallbackPoster) {
+                e.currentTarget.src = fallbackPoster;
+              }
+            }}
           />
         )}
-        {playVideo && embedUrl && (
+
+        {yt && (
           <div
-            className={`absolute inset-0 overflow-hidden transition-opacity duration-700 ${
-              videoReady ? "opacity-100" : "opacity-0"
-            }`}
+            key={yt}
+            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transition-opacity duration-1000"
+            style={{
+              width: "100vw",
+              height: "56.25vw",
+              minWidth: "177.78vh",
+              minHeight: "100vh",
+              opacity: videoOn ? 1 : 0,
+            }}
           >
-            <iframe
-              src={embedUrl}
-              title={video.title}
-              onLoad={() => setVideoReady(true)}
-              allow="autoplay; encrypted-media"
-              // Sobredimensiona o iframe 16:9 para cobrir a secção sem barras pretas.
-              style={{
-                position: "absolute",
-                top: "50%",
-                left: "50%",
-                transform: "translate(-50%, -50%)",
-                width: "max(100vw, 177.78vh)",
-                height: "max(56.25vw, 100vh)",
-                border: 0,
-                pointerEvents: "none",
-              }}
-            />
+            <div id="hero-yt" className="h-full w-full" />
           </div>
         )}
       </div>
-      {/* Véus cinematográficos sobre a imagem */}
+
+      {/* Cinematic veils over the backdrop */}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-bg via-bg/40 to-bg/30" />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-bg/80 via-transparent to-transparent" />
-      {/* Véu extra que intensifica no scroll — a secção "afunda" no escuro */}
       <div ref={veilRef} className="pointer-events-none absolute inset-0 bg-bg opacity-0" />
 
       <div
@@ -157,7 +218,7 @@ export default function Hero({ video, era }: { video: Video; era: Era | null }) 
         </div>
       </div>
 
-      {/* Pista de scroll — desaparece assim que o utilizador rola */}
+      {/* Scroll cue — fades out as soon as the user scrolls */}
       <div
         ref={cueRef}
         aria-hidden="true"
