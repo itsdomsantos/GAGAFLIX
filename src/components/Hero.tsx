@@ -6,7 +6,8 @@ import { autoThumbnail, heroThumbnail, youtubeId } from "@/lib/player";
 import { loadYouTubeAPI } from "@/lib/youtube";
 import { VIDEO_TYPE_LABELS, type Era, type Video } from "@/lib/types";
 
-/** Loop the first N seconds of the hero preview. */
+/** Hero preview loop window: start at START_SECONDS, loop for LOOP_SECONDS. */
+const START_SECONDS = 30;
 const LOOP_SECONDS = 20;
 
 export default function Hero({ video, era }: { video: Video; era: Era | null }) {
@@ -87,7 +88,7 @@ export default function Hero({ video, era }: { video: Video; era: Era | null }) 
           fs: 0,
           disablekb: 1,
           iv_load_policy: 3,
-          start: 0,
+          start: START_SECONDS,
         },
         events: {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -104,7 +105,7 @@ export default function Hero({ video, era }: { video: Video; era: Era | null }) 
             if (e.data === YT.PlayerState.PLAYING) setVideoOn(true);
             else if (e.data === YT.PlayerState.ENDED) {
               try {
-                e.target.seekTo(0);
+                e.target.seekTo(START_SECONDS);
                 e.target.playVideo();
               } catch {
                 /* ignore */
@@ -116,8 +117,8 @@ export default function Hero({ video, era }: { video: Video; era: Era | null }) 
 
       iv = setInterval(() => {
         try {
-          if (player?.getCurrentTime && player.getCurrentTime() >= LOOP_SECONDS) {
-            player.seekTo(0);
+          if (player?.getCurrentTime && player.getCurrentTime() >= START_SECONDS + LOOP_SECONDS) {
+            player.seekTo(START_SECONDS);
           }
         } catch {
           /* ignore */
