@@ -116,11 +116,18 @@ export default function Hero({ video, era }: { video: Video; era: Era | null }) 
         },
       });
 
+      let lastT = -1;
       iv = setInterval(() => {
         try {
           const t = player?.getCurrentTime ? player.getCurrentTime() : 0;
-          // Real playback has started (advanced past the seek point) → reveal.
-          if (t >= START_SECONDS + 0.4) setRevealed(true);
+          const state = player?.getPlayerState ? player.getPlayerState() : -1;
+          // Reveal only when frames are actually rolling: PLAYING *and* the time
+          // is advancing between polls. A bare seekTo(30) sets currentTime to 30
+          // instantly while still buffering grey, so time alone isn't enough.
+          if (state === YT.PlayerState.PLAYING && t > START_SECONDS && t > lastT + 0.05) {
+            setRevealed(true);
+          }
+          lastT = t;
           if (t >= START_SECONDS + LOOP_SECONDS) player.seekTo(START_SECONDS);
         } catch {
           /* ignore */
