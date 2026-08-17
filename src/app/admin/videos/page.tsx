@@ -17,6 +17,7 @@ interface FormState {
   thumbnail_url: string;
   poster_url: string;
   featured: boolean;
+  is_hero: boolean;
 }
 
 const empty: FormState = {
@@ -30,6 +31,7 @@ const empty: FormState = {
   thumbnail_url: "",
   poster_url: "",
   featured: false,
+  is_hero: false,
 };
 
 export default function AdminVideos() {
@@ -66,6 +68,7 @@ export default function AdminVideos() {
       thumbnail_url: v.thumbnail_url ?? "",
       poster_url: v.poster_url ?? "",
       featured: v.featured,
+      is_hero: v.is_hero,
     });
     setError(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -87,7 +90,20 @@ export default function AdminVideos() {
       thumbnail_url: form.thumbnail_url.trim() || null,
       poster_url: form.poster_url.trim() || null,
       featured: form.featured,
+      is_hero: form.is_hero,
     };
+    // Only one video can be the homepage hero: before saving this one as the
+    // hero, clear the flag on every other video so the choice stays exclusive.
+    if (payload.is_hero) {
+      let clear = supabase.from("videos").update({ is_hero: false }).eq("is_hero", true);
+      if (form.id) clear = clear.neq("id", form.id);
+      const { error: clearError } = await clear;
+      if (clearError) {
+        setError(`Could not update the hero: ${clearError.message}`);
+        setBusy(false);
+        return;
+      }
+    }
     const result = form.id
       ? await supabase.from("videos").update(payload).eq("id", form.id)
       : await supabase.from("videos").insert(payload);
@@ -204,10 +220,16 @@ export default function AdminVideos() {
               </div>
             )}
             <label className="flex items-center gap-2 text-sm md:col-span-2">
+              <input type="checkbox" checked={form.is_hero}
+                onChange={(e) => setForm({ ...form, is_hero: e.target.checked })}
+                className="h-4 w-4 accent-[var(--accent)]" />
+              Make this the homepage <strong>hero</strong> (the big banner on top — only one video can hold it)
+            </label>
+            <label className="flex items-center gap-2 text-sm md:col-span-2">
               <input type="checkbox" checked={form.featured}
                 onChange={(e) => setForm({ ...form, featured: e.target.checked })}
                 className="h-4 w-4 accent-[var(--accent)]" />
-              Feature on the homepage (hero + the 4:5 “Featured” row)
+              Show in the homepage “Featured” row (the 4:5 posters)
             </label>
             {form.featured && (
               <>
@@ -270,7 +292,8 @@ export default function AdminVideos() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">
-                  {v.featured && <span className="mr-2 rounded bg-accent/20 px-1.5 py-0.5 text-[10px] font-bold uppercase text-accent">Hero</span>}
+                  {v.is_hero && <span className="mr-2 rounded bg-accent px-1.5 py-0.5 text-[10px] font-bold uppercase text-black">Hero</span>}
+                  {v.featured && <span className="mr-2 rounded bg-accent/20 px-1.5 py-0.5 text-[10px] font-bold uppercase text-accent">Featured</span>}
                   {v.title}
                 </p>
                 <p className="mt-0.5 truncate text-xs text-muted">

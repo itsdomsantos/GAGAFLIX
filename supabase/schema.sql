@@ -31,6 +31,9 @@ create table if not exists public.videos (
   thumbnail_url text,
   poster_url    text,
   featured      boolean not null default false,
+  -- The single big homepage hero banner. At most one video should be true;
+  -- the admin clears it on every other video when you pick a new hero.
+  is_hero       boolean not null default false,
   -- Link health (filled by the /api/health checker). unavailable_since being
   -- set means the video is hidden from the public site and waiting for review
   -- on /admin/alerts. Nothing is ever auto-deleted.
@@ -41,6 +44,7 @@ create table if not exists public.videos (
 );
 
 -- If you created the videos table earlier, run just these lines to catch up:
+-- alter table public.videos add column if not exists is_hero boolean not null default false;
 -- alter table public.videos add column if not exists poster_url text;
 -- alter table public.videos add column if not exists unavailable_since timestamptz;
 -- alter table public.videos add column if not exists unavailable_reason text;
