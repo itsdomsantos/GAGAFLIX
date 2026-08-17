@@ -7,7 +7,7 @@ import { loadYouTubeAPI } from "@/lib/youtube";
 import { VIDEO_TYPE_LABELS, type Era, type Video } from "@/lib/types";
 
 /** Hero preview loop window: start at START_SECONDS, loop for LOOP_SECONDS. */
-const START_SECONDS = 30;
+const START_SECONDS = 50;
 const LOOP_SECONDS = 20;
 
 export default function Hero({ video, era }: { video: Video; era: Era | null }) {
