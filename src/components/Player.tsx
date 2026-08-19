@@ -15,7 +15,7 @@ export default function Player({ url, title }: { url: string; title: string }) {
     case "youtube":
       return (
         <Frame
-          src={`https://www.youtube-nocookie.com/embed/${source.id}?rel=0&color=white`}
+        src={`https://www.youtube-nocookie.com/embed/${source.id}?rel=0&color=white&autoplay=1&mute=1&playsinline=1`}
           title={title}
         />
       );
