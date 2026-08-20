@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import FilmGrain from "@/components/FilmGrain";
 import { autoThumbnail, heroThumbnail, youtubeId } from "@/lib/player";
 import { loadYouTubeAPI } from "@/lib/youtube";
 import { VIDEO_TYPE_LABELS, type Era, type Video } from "@/lib/types";
@@ -186,6 +187,7 @@ export default function Hero({ video, era }: { video: Video; era: Era | null }) 
       {/* Cinematic veils over the backdrop */}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-bg via-bg/40 to-bg/30" />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-bg/80 via-transparent to-transparent" />
+      <FilmGrain />
       <div ref={veilRef} className="pointer-events-none absolute inset-0 bg-bg opacity-0" />
 
       <div

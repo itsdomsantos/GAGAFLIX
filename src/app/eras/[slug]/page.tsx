@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import EraTheme from "@/components/EraTheme";
+import FilmGrain from "@/components/FilmGrain";
 import Row from "@/components/Row";
 import { getEra, getVideos } from "@/lib/data";
 import { heroThumbnail } from "@/lib/player";
@@ -46,6 +47,7 @@ export default async function EraPage({
             background: `radial-gradient(80% 120% at 50% -20%, ${era.accent}, transparent 70%)`,
           }}
         />
+        <FilmGrain />
 
         <div className="relative mx-auto w-full max-w-7xl px-4 pb-12 pt-36 sm:px-6">
           <p

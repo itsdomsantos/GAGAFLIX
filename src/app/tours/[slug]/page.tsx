@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import EraTheme from "@/components/EraTheme";
+import FilmGrain from "@/components/FilmGrain";
 import Row from "@/components/Row";
 import Setlist from "@/components/Setlist";
 import TourSelector from "@/components/TourSelector";
@@ -61,6 +62,7 @@ export default async function TourPage({
             background: `radial-gradient(80% 120% at 50% -10%, ${tour.accent}, transparent 70%)`,
           }}
         />
+        <FilmGrain />
         <div className="relative mx-auto w-full max-w-7xl px-4 pb-12 pt-36 sm:px-6">
           <p
             className="text-xs font-semibold uppercase tracking-[0.25em]"
