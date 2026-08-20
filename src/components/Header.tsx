@@ -5,15 +5,17 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const links = [
-  { href: "/", label: "Home" },
-  { href: "/eras", label: "Eras" },
-  { href: "/timeline", label: "Timeline" },
-  { href: "/news", label: "News" },
+  { key: "home", href: "/", label: "Home" },
+  { key: "eras", href: "/eras", label: "Eras" },
+  { key: "tours", href: "/tours", label: "Tours" },
+  { key: "timeline", href: "/timeline", label: "Timeline" },
+  { key: "news", href: "/news", label: "News" },
 ];
 
-export default function Header() {
+export default function Header({ hidden = [] }: { hidden?: string[] }) {
   const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
+  const visible = links.filter((l) => !hidden.includes(l.key));
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -38,7 +40,7 @@ export default function Header() {
         </Link>
 
         <nav className="hidden items-center gap-6 text-sm md:flex">
-          {links.map((l) => (
+          {visible.map((l) => (
             <Link
               key={l.href}
               href={l.href}

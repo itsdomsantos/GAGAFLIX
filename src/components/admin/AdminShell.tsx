@@ -20,8 +20,10 @@ const nav = [
   { href: "/admin/movies", label: "Movies" },
   { href: "/admin/import", label: "Import" },
   { href: "/admin/eras", label: "Eras" },
+  { href: "/admin/tours", label: "Tours" },
   { href: "/admin/timeline", label: "Timeline" },
   { href: "/admin/stats", label: "Stats" },
+  { href: "/admin/pages", label: "Pages" },
   { href: "/admin/alerts", label: "Alerts" },
 ];
 

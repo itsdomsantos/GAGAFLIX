@@ -15,7 +15,7 @@ export default function Player({ url, title }: { url: string; title: string }) {
     case "youtube":
       return (
         <Frame
-          src={`https://www.youtube-nocookie.com/embed/${source.id}?rel=0&color=white`}
+        src={`https://www.youtube-nocookie.com/embed/${source.id}?rel=0&color=white&autoplay=1&mute=0&playsinline=1`}
           title={title}
         />
       );
@@ -27,7 +27,7 @@ export default function Player({ url, title }: { url: string; title: string }) {
       );
     case "gdrive":
       return (
-        <Frame src={`https://drive.google.com/file/d/${source.id}/preview`} title={title} />
+        <Frame src={`https://drive.google.com/file/d/${source.id}/preview` + `?autoplay=1&mute=0&playsinline=1`} title={title} />
       );
     case "streamable":
       return <Frame src={`https://streamable.com/e/${source.id}`} title={title} />;

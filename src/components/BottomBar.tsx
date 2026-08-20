@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 const items = [
   {
+    key: "home",
     href: "/",
     label: "Home",
     icon: (
@@ -18,6 +19,7 @@ const items = [
     ),
   },
   {
+    key: "eras",
     href: "/eras",
     label: "Eras",
     icon: (
@@ -30,6 +32,19 @@ const items = [
     ),
   },
   {
+    key: "tours",
+    href: "/tours",
+    label: "Tours",
+    icon: (
+      <>
+        <path d="M4 20V9l8-5 8 5v11" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" fill="none" />
+        <circle cx="12" cy="12" r="2.5" stroke="currentColor" strokeWidth="2" fill="none" />
+        <path d="M9 20v-3a3 3 0 0 1 6 0v3" stroke="currentColor" strokeWidth="2" fill="none" />
+      </>
+    ),
+  },
+  {
+    key: "timeline",
     href: "/timeline",
     label: "Timeline",
     icon: (
@@ -41,6 +56,7 @@ const items = [
     ),
   },
   {
+    key: "news",
     href: "/news",
     label: "News",
     icon: (
@@ -50,25 +66,17 @@ const items = [
       </>
     ),
   },
-  {
-    href: "/search",
-    label: "Search",
-    icon: (
-      <>
-        <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" fill="none" />
-        <path d="m20 20-3.5-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      </>
-    ),
-  },
 ];
 
-export default function BottomBar() {
+export default function BottomBar({ hidden = [] }: { hidden?: string[] }) {
   const pathname = usePathname();
   if (pathname.startsWith("/admin")) return null;
 
+  const visible = items.filter((item) => !hidden.includes(item.key));
+
   return (
     <nav className="fixed inset-x-0 bottom-0 z-50 flex border-t border-line bg-bg/85 backdrop-blur-xl md:hidden">
-      {items.map((item) => {
+      {visible.map((item) => {
         const active = pathname === item.href;
         return (
           <Link

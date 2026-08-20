@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
-import { seedEras, seedTimeline, seedVideos } from "./seed";
+import { seedEras, seedSetlist, seedTimeline, seedTours, seedVideos } from "./seed";
 import { getServerClient, hasSupabase } from "./supabase";
-import type { Era, Movie, TimelineMoment, Video } from "./types";
+import type { Era, Movie, TimelineMoment, Tour, TourSong, Video } from "./types";
 
 const IMAGE_EXTS = ["png", "jpg", "jpeg", "webp"];
 
@@ -109,6 +109,57 @@ export async function getTimeline(): Promise<TimelineMoment[]> {
 
 function sortMoments(moments: TimelineMoment[]): TimelineMoment[] {
   return [...moments].sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/**
+ * Nav pages the owner has hidden (returns their keys, e.g. ["tours","news"]).
+ * Stored under the "nav" key of site_settings; defaults to none hidden.
+ */
+export async function getHiddenPages(): Promise<string[]> {
+  if (!hasSupabase) return [];
+  return fromSupabase(async () => {
+    const { data, error } = await getServerClient()
+      .from("site_settings")
+      .select("value")
+      .eq("key", "nav")
+      .maybeSingle();
+    if (error) throw error;
+    const hidden = (data?.value as { hidden?: string[] } | null)?.hidden;
+    return Array.isArray(hidden) ? hidden : [];
+  }, []);
+}
+
+export async function getTours(): Promise<Tour[]> {
+  if (!hasSupabase) return seedTours;
+  return fromSupabase(async () => {
+    const { data, error } = await getServerClient()
+      .from("tours")
+      .select("*")
+      .order("sort", { ascending: true });
+    if (error) throw error;
+    return ((data as Tour[]) ?? []).map((t) => ({ ...t, stats: t.stats ?? [] }));
+  }, seedTours);
+}
+
+export async function getTour(slug: string): Promise<Tour | null> {
+  const tours = await getTours();
+  return tours.find((t) => t.slug === slug) ?? null;
+}
+
+/** A tour's setlist, ordered by position. */
+export async function getSetlist(tourSlug: string): Promise<TourSong[]> {
+  if (!hasSupabase) {
+    return seedSetlist.filter((s) => s.tour_slug === tourSlug);
+  }
+  return fromSupabase(async () => {
+    const { data, error } = await getServerClient()
+      .from("tour_setlist")
+      .select("*")
+      .eq("tour_slug", tourSlug)
+      .order("position", { ascending: true });
+    if (error) throw error;
+    return (data as TourSong[]) ?? [];
+  }, seedSetlist.filter((s) => s.tour_slug === tourSlug));
 }
 
 /** Movie poster cards linking out to streaming services (empty until you add some in /admin). */

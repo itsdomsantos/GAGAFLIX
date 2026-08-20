@@ -213,3 +213,114 @@ insert into public.timeline_moments (date, title, body, era_slug) values
   ('2024-10-04', 'Joker: Folie à Deux', 'Lee Quinzel arrives: Gaga stars opposite Joaquin Phoenix in the musical descent into madness.', 'joker'),
   ('2025-03-07', 'MAYHEM', 'The return to dark pop. Abracadabra and Disease dominate the charts, and the chrome-gothic aesthetic defines the era.', 'mayhem'),
   ('2025-04-11', 'Coachella: The Art of Personal Chaos', 'A historic two-hour headline set that fans (and critics) rank among the festival''s greatest ever.', 'mayhem');
+
+-- ============================================================
+-- TOURS — concert tours, organised by the chronology of the show
+-- (the setlist). Where Eras group the catalogue by video TYPE,
+-- a Tour groups it by the order songs were performed.
+--
+-- Already have the other tables and just want the Tours section?
+-- Paste this whole block into the SQL Editor and Run once.
+-- ============================================================
+
+create table if not exists public.tours (
+  slug         text primary key,
+  name         text not null,
+  years        text not null default '',
+  tagline      text,
+  description  text not null default '',
+  accent       text not null default '#e04e20',
+  poster_url   text,
+  backdrop_url text,
+  logo_url     text,
+  era_slug     text references public.eras(slug) on update cascade on delete set null,
+  -- Headline facts shown in the stats grid: [{ "label": "Shows", "value": "20" }, …]
+  stats        jsonb not null default '[]'::jsonb,
+  sort         integer not null default 99
+);
+
+create index if not exists tours_sort_idx on public.tours (sort);
+
+-- One line of a tour's setlist, in the exact performed order. video_id points
+-- at the performance to open when the row is tapped (null = greyed, awaiting a clip).
+create table if not exists public.tour_setlist (
+  id        uuid primary key default gen_random_uuid(),
+  tour_slug text not null references public.tours(slug) on update cascade on delete cascade,
+  position  integer not null default 0,
+  song      text not null,
+  note      text,
+  video_id  uuid references public.videos(id) on update cascade on delete set null
+);
+
+create index if not exists tour_setlist_tour_idx on public.tour_setlist (tour_slug, position);
+
+-- Optional: tag a video with the tour it was performed on (powers the
+-- "From <tour>" row). Safe to run if the videos table already exists.
+alter table public.videos add column if not exists tour_slug
+  text references public.tours(slug) on update cascade on delete set null;
+
+alter table public.tours enable row level security;
+alter table public.tour_setlist enable row level security;
+
+create policy "public read tours" on public.tours
+  for select using (true);
+create policy "admin write tours" on public.tours
+  for all to authenticated using (true) with check (true);
+
+create policy "public read tour_setlist" on public.tour_setlist
+  for select using (true);
+create policy "admin write tour_setlist" on public.tour_setlist
+  for all to authenticated using (true) with check (true);
+
+-- Starter tours (metadata for every digression; fill setlists in /admin).
+insert into public.tours (slug, name, years, tagline, description, accent, era_slug, stats, sort) values
+  ('the-fame-ball', 'The Fame Ball Tour', '2009', 'The pop art rave that started the road.', 'Gaga''s first headlining tour — a travelling piece of performance art through clubs and theatres, framed as an exhibition in four acts.', '#d4af37', 'the-fame', '[{"label":"Shows","value":"69"},{"label":"Legs","value":"3"},{"label":"Continents","value":"3"}]', 1),
+  ('the-monster-ball', 'The Monster Ball Tour', '2009 – 2011', 'The night the Little Monsters were born.', 'The tour that built the Haus. Reworked after a few months into an arena spectacular — the highest-grossing tour ever by a debut headliner at the time.', '#b9bcc8', 'the-fame-monster', '[{"label":"Shows","value":"200+"},{"label":"Gross","value":"$227.4M"},{"label":"Legs","value":"3"}]', 2),
+  ('born-this-way-ball', 'Born This Way Ball', '2012 – 2013', 'Welcome to the Government Gaga castle.', 'A gothic-electro fortress on stage. A worldwide stadium and arena run cut short by a hip injury — mythologised by fans ever since.', '#9fb4c7', 'born-this-way', '[{"label":"Shows","value":"~65"},{"label":"Continents","value":"5"}]', 3),
+  ('artrave-artpop-ball', 'artRave: The ARTPOP Ball', '2014', 'Pop culture, in the flesh.', 'The album''s artRAVE launch grown into a full tour — inflatable sets, aquatic worlds and the most joyful, colourful stage of the catalogue.', '#a6e22e', 'artpop', '[{"label":"Shows","value":"45"},{"label":"Gross","value":"$83M"}]', 4),
+  ('cheek-to-cheek-tour', 'Cheek to Cheek Tour', '2014 – 2015', 'Gaga & Tony Bennett, live in jazz.', 'The jazz record taken on the road with Tony Bennett — big band, standards and the vocal range behind the pop provocateur.', '#e63946', 'cheek-to-cheek', '[{"label":"Shows","value":"36"},{"label":"With","value":"Tony Bennett"}]', 5),
+  ('joanne-world-tour', 'Joanne World Tour', '2017 – 2018', 'A soul laid bare, arena by arena.', 'Following the Super Bowl LI halftime, an arena tour balancing the intimacy of Joanne with the anthems that made her.', '#e8a798', 'joanne', '[{"label":"Shows","value":"84"},{"label":"Gross","value":"$95M"}]', 6),
+  ('enigma-jazz-piano', 'Enigma + Jazz & Piano', '2018 – 2024', 'The Las Vegas residency.', 'Two shows in one residency at the Park MGM: Enigma, a futuristic pop odyssey, and Jazz & Piano, the standards stripped back to voice and keys.', '#ff3e9a', 'chromatica', '[{"label":"Residency","value":"Las Vegas"},{"label":"Two shows","value":"Enigma · Jazz"}]', 7),
+  ('the-chromatica-ball', 'The Chromatica Ball', '2022', 'Six chapters of a brutalist dream.', 'The stadium tour Chromatica always deserved — a monolithic, sci-fi cathedral staged across six acts, and one of 2022''s biggest tours.', '#ff3e9a', 'chromatica', '[{"label":"Shows","value":"20"},{"label":"Gross","value":"$112.4M"},{"label":"Attendance","value":"845k"}]', 8),
+  ('the-mayhem-ball', 'The Mayhem Ball', '2025 – now', 'Of velvet, vice and a gothic dream.', 'The chrome-gothic era live: a theatrical arena show in four acts and an encore, threading MAYHEM through the whole Gaga canon.', '#e04e20', 'mayhem', '[{"label":"Premiere","value":"2025"},{"label":"Acts","value":"4 + encore"},{"label":"Status","value":"On tour"}]', 9)
+on conflict (slug) do nothing;
+
+-- Pilot setlist: The Mayhem Ball (2025). Order/acts are a starting point —
+-- confirm them and attach the right performances (set video_id) in /admin.
+insert into public.tour_setlist (tour_slug, position, song, note) values
+  ('the-mayhem-ball', 1, 'Bloody Mary', 'Act I — Of Velvet and Vice'),
+  ('the-mayhem-ball', 2, 'Abracadabra', 'Act I — Of Velvet and Vice'),
+  ('the-mayhem-ball', 3, 'Judas', 'Act I — Of Velvet and Vice'),
+  ('the-mayhem-ball', 4, 'Scheiße', 'Act I — Of Velvet and Vice'),
+  ('the-mayhem-ball', 5, 'Garden of Eden', 'Act I — Of Velvet and Vice'),
+  ('the-mayhem-ball', 6, 'Poker Face', 'Act II — And She Fell Into a Gothic Dream'),
+  ('the-mayhem-ball', 7, 'Perfect Celebrity', 'Act II — And She Fell Into a Gothic Dream'),
+  ('the-mayhem-ball', 8, 'Disease', 'Act II — And She Fell Into a Gothic Dream'),
+  ('the-mayhem-ball', 9, 'Paparazzi', 'Act II — And She Fell Into a Gothic Dream'),
+  ('the-mayhem-ball', 10, 'Alejandro', 'Act III — The Beautiful Nightmare'),
+  ('the-mayhem-ball', 11, 'The Edge of Glory', 'Act III — The Beautiful Nightmare'),
+  ('the-mayhem-ball', 12, 'Shadow of a Man', 'Act III — The Beautiful Nightmare'),
+  ('the-mayhem-ball', 13, 'Die With a Smile', 'Act III — The Beautiful Nightmare'),
+  ('the-mayhem-ball', 14, 'How Bad Do U Want Me', 'Act IV — Every Chessboard Has Two Queens'),
+  ('the-mayhem-ball', 15, 'Vanish Into You', 'Act IV — Every Chessboard Has Two Queens'),
+  ('the-mayhem-ball', 16, 'Killah', 'Act IV — Every Chessboard Has Two Queens'),
+  ('the-mayhem-ball', 17, 'Zombieboy', 'Act IV — Every Chessboard Has Two Queens'),
+  ('the-mayhem-ball', 18, 'Bad Romance', 'Encore');
+
+-- ============================================================
+-- SITE SETTINGS — small key/value store for site-wide toggles.
+-- Currently powers "hide pages": which nav entries are hidden.
+-- Paste this block into the SQL Editor and Run once.
+-- ============================================================
+
+create table if not exists public.site_settings (
+  key   text primary key,
+  value jsonb not null default '{}'::jsonb
+);
+
+alter table public.site_settings enable row level security;
+
+create policy "public read site_settings" on public.site_settings
+  for select using (true);
+create policy "admin write site_settings" on public.site_settings
+  for all to authenticated using (true) with check (true);
