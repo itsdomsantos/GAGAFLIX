@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
-import { seedEras, seedTimeline, seedVideos } from "./seed";
+import { seedEras, seedSetlist, seedTimeline, seedTours, seedVideos } from "./seed";
 import { getServerClient, hasSupabase } from "./supabase";
-import type { Era, Movie, TimelineMoment, Video } from "./types";
+import type { Era, Movie, TimelineMoment, Tour, TourSong, Video } from "./types";
 
 const IMAGE_EXTS = ["png", "jpg", "jpeg", "webp"];
 
@@ -109,6 +109,39 @@ export async function getTimeline(): Promise<TimelineMoment[]> {
 
 function sortMoments(moments: TimelineMoment[]): TimelineMoment[] {
   return [...moments].sort((a, b) => a.date.localeCompare(b.date));
+}
+
+export async function getTours(): Promise<Tour[]> {
+  if (!hasSupabase) return seedTours;
+  return fromSupabase(async () => {
+    const { data, error } = await getServerClient()
+      .from("tours")
+      .select("*")
+      .order("sort", { ascending: true });
+    if (error) throw error;
+    return ((data as Tour[]) ?? []).map((t) => ({ ...t, stats: t.stats ?? [] }));
+  }, seedTours);
+}
+
+export async function getTour(slug: string): Promise<Tour | null> {
+  const tours = await getTours();
+  return tours.find((t) => t.slug === slug) ?? null;
+}
+
+/** A tour's setlist, ordered by position. */
+export async function getSetlist(tourSlug: string): Promise<TourSong[]> {
+  if (!hasSupabase) {
+    return seedSetlist.filter((s) => s.tour_slug === tourSlug);
+  }
+  return fromSupabase(async () => {
+    const { data, error } = await getServerClient()
+      .from("tour_setlist")
+      .select("*")
+      .eq("tour_slug", tourSlug)
+      .order("position", { ascending: true });
+    if (error) throw error;
+    return (data as TourSong[]) ?? [];
+  }, seedSetlist.filter((s) => s.tour_slug === tourSlug));
 }
 
 /** Movie poster cards linking out to streaming services (empty until you add some in /admin). */

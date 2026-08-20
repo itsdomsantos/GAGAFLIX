@@ -1,4 +1,4 @@
-import type { Era, TimelineMoment, Video } from "./types";
+import type { Era, TimelineMoment, Tour, TourSong, Video } from "./types";
 
 /**
  * Starter content — used while Supabase isn't configured yet,
@@ -171,6 +171,7 @@ const v = (
   date,
   thumbnail_url: null,
   poster_url: null,
+  tour_slug: null,
   featured,
   is_hero,
   unavailable_since: null,
@@ -225,4 +226,219 @@ export const seedTimeline: TimelineMoment[] = [
   t("joker-premiere", "2024-10-04", "Joker: Folie à Deux", "Lee Quinzel arrives: Gaga stars opposite Joaquin Phoenix in the musical descent into madness.", "joker"),
   t("mayhem-release", "2025-03-07", "MAYHEM", "The return to dark pop. Abracadabra and Disease dominate the charts, and the chrome-gothic aesthetic defines the era.", "mayhem"),
   t("coachella-2025", "2025-04-11", "Coachella: The Art of Personal Chaos", "A historic two-hour headline set that fans (and critics) rank among the festival's greatest ever.", "mayhem"),
+];
+
+// ------------------------------------------------------------
+// Tours — a página organizada pela CRONOLOGIA do espetáculo.
+// Metadados semeados para todas as digressões; a setlist-piloto
+// totalmente montada é a atual Mayhem Ball (edita tudo em /admin).
+// ------------------------------------------------------------
+
+export const seedTours: Tour[] = [
+  {
+    slug: "the-fame-ball",
+    name: "The Fame Ball Tour",
+    years: "2009",
+    tagline: "The pop art rave that started the road.",
+    description:
+      "Gaga's first headlining tour — a travelling piece of performance art through clubs and theatres, framed as an exhibition in four acts.",
+    accent: "#d4af37",
+    poster_url: null,
+    backdrop_url: null,
+    logo_url: null,
+    era_slug: "the-fame",
+    stats: [
+      { label: "Shows", value: "69" },
+      { label: "Legs", value: "3" },
+      { label: "Continents", value: "3" },
+    ],
+    sort: 1,
+  },
+  {
+    slug: "the-monster-ball",
+    name: "The Monster Ball Tour",
+    years: "2009 – 2011",
+    tagline: "The night the Little Monsters were born.",
+    description:
+      "The tour that built the Haus. Reworked after a few months into an arena spectacular — the highest-grossing tour ever by a debut headliner at the time.",
+    accent: "#b9bcc8",
+    poster_url: null,
+    backdrop_url: null,
+    logo_url: null,
+    era_slug: "the-fame-monster",
+    stats: [
+      { label: "Shows", value: "200+" },
+      { label: "Gross", value: "$227.4M" },
+      { label: "Legs", value: "3" },
+    ],
+    sort: 2,
+  },
+  {
+    slug: "born-this-way-ball",
+    name: "Born This Way Ball",
+    years: "2012 – 2013",
+    tagline: "Welcome to the Government Gaga castle.",
+    description:
+      "A gothic-electro fortress on stage. A worldwide stadium and arena run cut short by a hip injury — mythologised by fans ever since.",
+    accent: "#9fb4c7",
+    poster_url: null,
+    backdrop_url: null,
+    logo_url: null,
+    era_slug: "born-this-way",
+    stats: [
+      { label: "Shows", value: "~65" },
+      { label: "Continents", value: "5" },
+    ],
+    sort: 3,
+  },
+  {
+    slug: "artrave-artpop-ball",
+    name: "artRave: The ARTPOP Ball",
+    years: "2014",
+    tagline: "Pop culture, in the flesh.",
+    description:
+      "The album's artRAVE launch grown into a full tour — inflatable sets, aquatic worlds and the most joyful, colourful stage of the catalogue.",
+    accent: "#a6e22e",
+    poster_url: null,
+    backdrop_url: null,
+    logo_url: null,
+    era_slug: "artpop",
+    stats: [
+      { label: "Shows", value: "45" },
+      { label: "Gross", value: "$83M" },
+    ],
+    sort: 4,
+  },
+  {
+    slug: "cheek-to-cheek-tour",
+    name: "Cheek to Cheek Tour",
+    years: "2014 – 2015",
+    tagline: "Gaga & Tony Bennett, live in jazz.",
+    description:
+      "The jazz record taken on the road with Tony Bennett — big band, standards and the vocal range behind the pop provocateur.",
+    accent: "#e63946",
+    poster_url: null,
+    backdrop_url: null,
+    logo_url: null,
+    era_slug: "cheek-to-cheek",
+    stats: [
+      { label: "Shows", value: "36" },
+      { label: "With", value: "Tony Bennett" },
+    ],
+    sort: 5,
+  },
+  {
+    slug: "joanne-world-tour",
+    name: "Joanne World Tour",
+    years: "2017 – 2018",
+    tagline: "A soul laid bare, arena by arena.",
+    description:
+      "Following the Super Bowl LI halftime, an arena tour balancing the intimacy of Joanne with the anthems that made her.",
+    accent: "#e8a798",
+    poster_url: null,
+    backdrop_url: null,
+    logo_url: null,
+    era_slug: "joanne",
+    stats: [
+      { label: "Shows", value: "84" },
+      { label: "Gross", value: "$95M" },
+    ],
+    sort: 6,
+  },
+  {
+    slug: "enigma-jazz-piano",
+    name: "Enigma + Jazz & Piano",
+    years: "2018 – 2024",
+    tagline: "The Las Vegas residency.",
+    description:
+      "Two shows in one residency at the Park MGM: Enigma, a futuristic pop odyssey, and Jazz & Piano, the standards stripped back to voice and keys.",
+    accent: "#ff3e9a",
+    poster_url: null,
+    backdrop_url: null,
+    logo_url: null,
+    era_slug: "chromatica",
+    stats: [
+      { label: "Residency", value: "Las Vegas" },
+      { label: "Two shows", value: "Enigma · Jazz" },
+    ],
+    sort: 7,
+  },
+  {
+    slug: "the-chromatica-ball",
+    name: "The Chromatica Ball",
+    years: "2022",
+    tagline: "Six chapters of a brutalist dream.",
+    description:
+      "The stadium tour Chromatica always deserved — a monolithic, sci-fi cathedral staged across six acts, and one of 2022's biggest tours.",
+    accent: "#ff3e9a",
+    poster_url: null,
+    backdrop_url: null,
+    logo_url: null,
+    era_slug: "chromatica",
+    stats: [
+      { label: "Shows", value: "20" },
+      { label: "Gross", value: "$112.4M" },
+      { label: "Attendance", value: "845k" },
+    ],
+    sort: 8,
+  },
+  {
+    slug: "the-mayhem-ball",
+    name: "The Mayhem Ball",
+    years: "2025 – now",
+    tagline: "Of velvet, vice and a gothic dream.",
+    description:
+      "The chrome-gothic era live: a theatrical arena show in four acts and an encore, threading MAYHEM through the whole Gaga canon.",
+    accent: "#e04e20",
+    poster_url: null,
+    backdrop_url: null,
+    logo_url: null,
+    era_slug: "mayhem",
+    stats: [
+      { label: "Premiere", value: "2025" },
+      { label: "Acts", value: "4 + encore" },
+      { label: "Status", value: "On tour" },
+    ],
+    sort: 9,
+  },
+];
+
+/**
+ * Setlist-piloto: The Mayhem Ball (2025). A ordem e os atos são um ponto de
+ * partida — confirma e liga os vídeos certos em /admin. `video_id` aponta para
+ * um clip de seedVideos (ou uma linha da tabela videos) quando existe.
+ */
+const s = (
+  position: number,
+  song: string,
+  note: string | null = null,
+  video_id: string | null = null,
+): TourSong => ({
+  id: `mayhem-${position}`,
+  tour_slug: "the-mayhem-ball",
+  position,
+  song,
+  note,
+  video_id,
+});
+
+export const seedSetlist: TourSong[] = [
+  s(1, "Bloody Mary", "Act I — Of Velvet and Vice"),
+  s(2, "Abracadabra", "Act I — Of Velvet and Vice", "abracadabra-snl"),
+  s(3, "Judas", "Act I — Of Velvet and Vice", "judas"),
+  s(4, "Scheiße", "Act I — Of Velvet and Vice"),
+  s(5, "Garden of Eden", "Act I — Of Velvet and Vice"),
+  s(6, "Poker Face", "Act II — And She Fell Into a Gothic Dream", "poker-face"),
+  s(7, "Perfect Celebrity", "Act II — And She Fell Into a Gothic Dream"),
+  s(8, "Disease", "Act II — And She Fell Into a Gothic Dream", "disease"),
+  s(9, "Paparazzi", "Act II — And She Fell Into a Gothic Dream", "paparazzi"),
+  s(10, "Alejandro", "Act III — The Beautiful Nightmare", "alejandro"),
+  s(11, "The Edge of Glory", "Act III — The Beautiful Nightmare"),
+  s(12, "Shadow of a Man", "Act III — The Beautiful Nightmare"),
+  s(13, "Die With a Smile", "Act III — The Beautiful Nightmare"),
+  s(14, "How Bad Do U Want Me", "Act IV — Every Chessboard Has Two Queens"),
+  s(15, "Vanish Into You", "Act IV — Every Chessboard Has Two Queens"),
+  s(16, "Killah", "Act IV — Every Chessboard Has Two Queens"),
+  s(17, "Zombieboy", "Act IV — Every Chessboard Has Two Queens"),
+  s(18, "Bad Romance", "Encore", "bad-romance"),
 ];

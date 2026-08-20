@@ -1,22 +1,24 @@
 import Link from "next/link";
 import EraCarousel from "@/components/EraCarousel";
+import TourCarousel from "@/components/TourCarousel";
 import Hero from "@/components/Hero";
 import Row from "@/components/Row";
 import PosterRow from "@/components/PosterRow";
 import NewsCard from "@/components/NewsCard";
 import { autoThumbnail } from "@/lib/player";
-import { getEras, getFeatured, getMovies, getRecent, getVideos } from "@/lib/data";
+import { getEras, getFeatured, getMovies, getRecent, getTours, getVideos } from "@/lib/data";
 import { getNews } from "@/lib/news";
 import { VIDEO_TYPES, VIDEO_TYPE_LABELS } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [featured, videos, recent, eras, movies, news] = await Promise.all([
+  const [featured, videos, recent, eras, tours, movies, news] = await Promise.all([
     getFeatured(),
     getVideos(),
     getRecent(12),
     getEras(),
+    getTours(),
     getMovies(),
     getNews(10),
   ]);
@@ -61,6 +63,8 @@ export default async function HomePage() {
       <PosterRow title="Featured" items={featuredItems} />
 
       <EraCarousel eras={eras} />
+
+      <TourCarousel tours={tours} />
 
       <PosterRow title="Movies" items={movieItems} />
 

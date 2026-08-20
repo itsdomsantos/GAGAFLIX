@@ -30,6 +30,17 @@ const items = [
     ),
   },
   {
+    href: "/tours",
+    label: "Tours",
+    icon: (
+      <>
+        <path d="M4 20V9l8-5 8 5v11" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" fill="none" />
+        <circle cx="12" cy="12" r="2.5" stroke="currentColor" strokeWidth="2" fill="none" />
+        <path d="M9 20v-3a3 3 0 0 1 6 0v3" stroke="currentColor" strokeWidth="2" fill="none" />
+      </>
+    ),
+  },
+  {
     href: "/timeline",
     label: "Timeline",
     icon: (
@@ -47,16 +58,6 @@ const items = [
       <>
         <rect x="3" y="4" width="18" height="16" rx="1.5" stroke="currentColor" strokeWidth="2" fill="none" />
         <path d="M7 8h7M7 12h10M7 16h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      </>
-    ),
-  },
-  {
-    href: "/search",
-    label: "Search",
-    icon: (
-      <>
-        <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" fill="none" />
-        <path d="m20 20-3.5-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       </>
     ),
   },

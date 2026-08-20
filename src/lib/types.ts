@@ -26,6 +26,8 @@ export interface Video {
   featured: boolean;
   /** The single video shown as the big homepage hero banner. At most one is true. */
   is_hero: boolean;
+  /** Optional link to a concert tour (the setlist references videos by id). */
+  tour_slug: string | null;
   /** Set when the link checker found the source gone — hidden from the public site, pending review. */
   unavailable_since: string | null;
   unavailable_reason: string | null;
@@ -56,6 +58,53 @@ export interface Movie {
   link: string | null;
   sort: number;
   created_at: string;
+}
+
+/** One headline fact shown in a tour's stats grid (e.g. "Shows" → "20"). */
+export interface TourStat {
+  label: string;
+  value: string;
+}
+
+/**
+ * A Lady Gaga concert tour. Where Eras organise the catalogue by video TYPE,
+ * a Tour organises it by the CHRONOLOGY of the show — its setlist. Opening a
+ * tour re-themes the whole page in its accent colour.
+ */
+export interface Tour {
+  slug: string;
+  name: string;
+  years: string;
+  /** A short punchy line under the title. */
+  tagline: string | null;
+  description: string;
+  accent: string;
+  /** 4:5 poster / symbol used in the grid and selector. */
+  poster_url: string | null;
+  /** Wide image behind the hero and page background. */
+  backdrop_url: string | null;
+  /** Transparent PNG lettering that replaces the text title when present. */
+  logo_url: string | null;
+  /** Optional link to the era this tour belongs to. */
+  era_slug: string | null;
+  /** Headline facts (shows, continents, costume changes, gross…). */
+  stats: TourStat[];
+  sort: number;
+}
+
+/**
+ * One line of a tour's setlist, in the exact order it was performed. When
+ * `video_id` points at a video, the row is clickable and opens that
+ * performance; otherwise the song shows greyed, awaiting a clip.
+ */
+export interface TourSong {
+  id: string;
+  tour_slug: string;
+  position: number;
+  song: string;
+  /** Optional label — an act name, "interlude", "acoustic"… */
+  note: string | null;
+  video_id: string | null;
 }
 
 export const VIDEO_TYPES: VideoType[] = ["live", "mv", "interview", "fashion", "doc"];
