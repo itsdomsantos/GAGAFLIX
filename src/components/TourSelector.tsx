@@ -49,11 +49,11 @@ export default function TourSelector({
               )}
             </div>
             <p
-              className={`mt-2 w-full text-center text-[10px] font-semibold uppercase leading-tight tracking-wider [text-wrap:balance] transition-colors ${
+              className={`mt-2 flex min-h-[2.4em] w-full items-start justify-center text-center text-[10px] font-semibold uppercase leading-tight tracking-wider [text-wrap:balance] transition-colors ${
                 active ? "text-text" : "text-muted group-hover:text-text"
               }`}
             >
-              {tour.name.replace(/^The\s+/, "")}
+              <span className="line-clamp-2">{tour.name.replace(/^The\s+/, "")}</span>
             </p>
           </Link>
         );

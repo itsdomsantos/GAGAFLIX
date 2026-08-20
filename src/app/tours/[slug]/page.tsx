@@ -88,7 +88,7 @@ export default async function TourPage({
       </section>
 
       {/* Switch tours — re-themes the whole page */}
-      <section className="mt-4">
+      <section className="mx-auto mt-4 max-w-7xl">
         <h2 className="mb-1 px-4 text-xs font-semibold uppercase tracking-[0.25em] text-muted sm:px-6">
           Switch tour
         </h2>
@@ -120,9 +120,11 @@ export default async function TourPage({
       )}
 
       {/* The setlist — the heart of the page */}
-      <section className="mx-auto mt-12 max-w-3xl px-4 sm:px-6">
+      <section className="mx-auto mt-12 max-w-7xl px-4 sm:px-6">
         <h2 className="mb-6 font-display text-3xl chrome-text sm:text-4xl">Setlist</h2>
-        <Setlist songs={setlist} accent={tour.accent} validVideoIds={validVideoIds} />
+        <div className="max-w-3xl">
+          <Setlist songs={setlist} accent={tour.accent} validVideoIds={validVideoIds} />
+        </div>
       </section>
 
       {tourClips.length > 0 && (
