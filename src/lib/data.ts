@@ -111,6 +111,24 @@ function sortMoments(moments: TimelineMoment[]): TimelineMoment[] {
   return [...moments].sort((a, b) => a.date.localeCompare(b.date));
 }
 
+/**
+ * Nav pages the owner has hidden (returns their keys, e.g. ["tours","news"]).
+ * Stored under the "nav" key of site_settings; defaults to none hidden.
+ */
+export async function getHiddenPages(): Promise<string[]> {
+  if (!hasSupabase) return [];
+  return fromSupabase(async () => {
+    const { data, error } = await getServerClient()
+      .from("site_settings")
+      .select("value")
+      .eq("key", "nav")
+      .maybeSingle();
+    if (error) throw error;
+    const hidden = (data?.value as { hidden?: string[] } | null)?.hidden;
+    return Array.isArray(hidden) ? hidden : [];
+  }, []);
+}
+
 export async function getTours(): Promise<Tour[]> {
   if (!hasSupabase) return seedTours;
   return fromSupabase(async () => {

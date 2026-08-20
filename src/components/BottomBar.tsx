@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 const items = [
   {
+    key: "home",
     href: "/",
     label: "Home",
     icon: (
@@ -18,6 +19,7 @@ const items = [
     ),
   },
   {
+    key: "eras",
     href: "/eras",
     label: "Eras",
     icon: (
@@ -30,6 +32,7 @@ const items = [
     ),
   },
   {
+    key: "tours",
     href: "/tours",
     label: "Tours",
     icon: (
@@ -41,6 +44,7 @@ const items = [
     ),
   },
   {
+    key: "timeline",
     href: "/timeline",
     label: "Timeline",
     icon: (
@@ -52,6 +56,7 @@ const items = [
     ),
   },
   {
+    key: "news",
     href: "/news",
     label: "News",
     icon: (
@@ -63,13 +68,15 @@ const items = [
   },
 ];
 
-export default function BottomBar() {
+export default function BottomBar({ hidden = [] }: { hidden?: string[] }) {
   const pathname = usePathname();
   if (pathname.startsWith("/admin")) return null;
 
+  const visible = items.filter((item) => !hidden.includes(item.key));
+
   return (
     <nav className="fixed inset-x-0 bottom-0 z-50 flex border-t border-line bg-bg/85 backdrop-blur-xl md:hidden">
-      {items.map((item) => {
+      {visible.map((item) => {
         const active = pathname === item.href;
         return (
           <Link

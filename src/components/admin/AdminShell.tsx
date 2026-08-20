@@ -23,6 +23,7 @@ const nav = [
   { href: "/admin/tours", label: "Tours" },
   { href: "/admin/timeline", label: "Timeline" },
   { href: "/admin/stats", label: "Stats" },
+  { href: "/admin/pages", label: "Pages" },
   { href: "/admin/alerts", label: "Alerts" },
 ];
 

@@ -306,3 +306,21 @@ insert into public.tour_setlist (tour_slug, position, song, note) values
   ('the-mayhem-ball', 16, 'Killah', 'Act IV — Every Chessboard Has Two Queens'),
   ('the-mayhem-ball', 17, 'Zombieboy', 'Act IV — Every Chessboard Has Two Queens'),
   ('the-mayhem-ball', 18, 'Bad Romance', 'Encore');
+
+-- ============================================================
+-- SITE SETTINGS — small key/value store for site-wide toggles.
+-- Currently powers "hide pages": which nav entries are hidden.
+-- Paste this block into the SQL Editor and Run once.
+-- ============================================================
+
+create table if not exists public.site_settings (
+  key   text primary key,
+  value jsonb not null default '{}'::jsonb
+);
+
+alter table public.site_settings enable row level security;
+
+create policy "public read site_settings" on public.site_settings
+  for select using (true);
+create policy "admin write site_settings" on public.site_settings
+  for all to authenticated using (true) with check (true);
