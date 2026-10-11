@@ -1,0 +1,83 @@
+{
+  "_help": "Feeds the Instagram autopilot reads for Lady Gaga news (free, no key). A story only counts when 'Gaga' is in its headline (requireGaga: false for Gaga-only sites). priority: higher wins when two outlets tell the same story. feed can be a list of candidate feed URLs (the first that answers wins); page = a news listing to read when no feed works. Google News is the safety net (headline only). Edit freely.",
+  "sources": [
+    {
+      "name": "Lady Gaga Now",
+      "feed": [
+        "https://ladygaganow.net/news/feed/",
+        "https://ladygaganow.net/feed/",
+        "https://ladygaganow.net/news/?rss=1"
+      ],
+      "page": "https://ladygaganow.net/news/",
+      "linkPattern": "^https://(www\\.)?ladygaganow\\.net/news/(?!page/)[\\w-]+/?$",
+      "priority": 5,
+      "requireGaga": false
+    },
+    {
+      "name": "Billboard",
+      "feed": "https://www.billboard.com/feed/",
+      "priority": 3
+    },
+    {
+      "name": "Rolling Stone",
+      "feed": "https://www.rollingstone.com/feed/",
+      "priority": 3
+    },
+    {
+      "name": "Variety",
+      "feed": "https://variety.com/feed/",
+      "priority": 3
+    },
+    {
+      "name": "The Hollywood Reporter",
+      "feed": "https://www.hollywoodreporter.com/feed/",
+      "priority": 2
+    },
+    {
+      "name": "Deadline",
+      "feed": "https://deadline.com/feed/",
+      "priority": 2
+    },
+    {
+      "name": "Pitchfork",
+      "feed": "https://pitchfork.com/feed/feed-news/rss",
+      "priority": 2
+    },
+    {
+      "name": "NME",
+      "feed": "https://www.nme.com/feed",
+      "priority": 2
+    },
+    {
+      "name": "Stereogum",
+      "feed": "https://www.stereogum.com/feed/",
+      "priority": 2
+    },
+    {
+      "name": "Consequence",
+      "feed": "https://consequence.net/feed/",
+      "priority": 2
+    },
+    {
+      "name": "Vulture",
+      "feed": "https://www.vulture.com/rss/index.xml",
+      "priority": 2
+    },
+    {
+      "name": "Idolator",
+      "feed": "https://www.idolator.com/feed/",
+      "priority": 2
+    },
+    {
+      "name": "Just Jared",
+      "feed": "https://www.justjared.com/feed/",
+      "priority": 1
+    },
+    {
+      "name": "Google News",
+      "feed": "https://news.google.com/rss/search?q=%22Lady%20Gaga%22&hl=en-US&gl=US&ceid=US:en",
+      "priority": 0,
+      "aggregator": true
+    }
+  ]
+}

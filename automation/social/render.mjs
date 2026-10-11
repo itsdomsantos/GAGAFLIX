@@ -2,7 +2,7 @@
  * Renders Instagram cards (1080×1350 JPEG — the Instagram API only takes JPEG)
  * from template.html with headless Chromium (Playwright).
  */
-import { existsSync, mkdirSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { chromium } from "playwright";
@@ -13,14 +13,10 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 /** Local paths → file:// URLs the page can load; URLs pass through. */
 export const asSrc = (p) => (!p ? null : /^(https?|file|data):/.test(p) ? p : pathToFileURL(p).href);
 
-/** public/logo.png (the real wordmark) once you add it; otherwise the typographic one. */
+/** public/logo.png if you ever add an image logo; otherwise the site's own typographic wordmark. */
 export function brandAssets() {
   const logoPath = ["png", "webp", "svg"].map((e) => join(ROOT, "public", `logo.${e}`)).find(existsSync);
-  const svg = readFileSync(join(ROOT, "src/app/icon.svg"), "utf8")
-    .replace(/<svg[^>]*>/, '<svg class="monogram" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">')
-    // drop the rounded app-icon tile, keep the flame G + glow
-    .replace(/<rect[^>]*\/>/g, "");
-  return { logo: asSrc(logoPath), monogram: svg };
+  return { logo: asSrc(logoPath) };
 }
 
 /** YouTube thumbnail candidates, sharpest first. */

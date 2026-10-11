@@ -37,12 +37,14 @@ Supabase grátis. Sem cartão, sem chaves pagas.
 | O quê | Quando | Onde está |
 |---|---|---|
 | **Robô do catálogo** — lê os feeds RSS dos canais do YouTube (sem chave), guarda os vídeos novos com "Gaga" no título na fila `/admin/inbox`, já com tipo e era sugeridos. Nada fica público sem a tua aprovação. Um vídeo rejeitado nunca volta a ser sugerido. | todos os dias, 05:23 UTC | `automation/catalog/` · lista de canais em `automation/channels.json` |
-| **Autopiloto do Instagram** — 1 post por dia, escolhido sozinho: **"N years ago today"** quando há um momento da timeline nesse dia; **"New this week"** ao domingo (carrossel com os vídeos novos da semana — nunca 1 post por vídeo); nos outros dias roda entre **From the vault** (um vídeo do catálogo), **Era spotlight** e um **reel promocional**. | todos os dias, 17:07 UTC | `automation/social/` |
+| **Autopiloto do Instagram** — **3 posts por dia**: às 11:37 e às 20:37 UTC uma **notícia da Lady Gaga** (fonte principal: [Lady Gaga Now](https://ladygaganow.net/news/); depois Billboard, Variety, Rolling Stone… — nunca a mesma história duas vezes, nem contada por outro site). Às 17:07 UTC o **post extra**: "N years ago today" / "Today: …" (timeline do site + [calendário do LGN](https://ladygaganow.net/events/1-lgn-calendar/?view=month)); se não houver, os **vídeos acabados de entrar** no GAGAFLIX (1 post, carrossel se forem vários — nunca 1 post por vídeo); senão um **promocional** a rodar: From the vault → Era spotlight → **reel do site a funcionar** (o site verdadeiro filmado num telemóvel). | 11:37 · 17:07 · 20:37 UTC | `automation/social/` · fontes em `automation/news-sources.json` e `automation/calendar-sources.json` |
 | **SEO** — `sitemap.xml`, `robots.txt`, títulos/descrições/imagens de partilha por vídeo e por era, e dados estruturados `VideoObject` (para os vídeos aparecerem nos resultados de vídeo do Google). | sempre | `src/app/sitemap.ts`, `robots.ts`, `/watch`, `/eras` |
 
-Regras do autopiloto: todo o texto vem só da timeline e do catálogo (que tu
-controlas) — nada é inventado. Nunca usa clips dos vídeos: só fotos das eras e
-thumbnails, com crédito na legenda. Legendas curtas, no máximo 1–2 emojis,
+Regras do autopiloto: nada é inventado — o texto vem da timeline e do catálogo
+(que tu controlas) ou, nas notícias e no calendário, das palavras da própria
+fonte (título e resumo dela), sempre creditada. Nunca usa clips dos vídeos: só
+fotos das eras e thumbnails do catálogo, com crédito na legenda. (Para usar a
+foto do próprio artigo, cria a variável `NEWS_ARTICLE_IMAGES` = `1` — ver 8.4.) Legendas curtas, no máximo 1–2 emojis,
 "link in bio", "Fan-made, non-profit." e hashtags no fim. O que já foi
 publicado fica guardado em `site_settings` (chave `instagram_autopilot`), por
 isso nada se repete.
@@ -54,9 +56,10 @@ Para testar no teu computador (precisa de `npx playwright install chromium` e de
 
 ```bash
 npm run catalog -- --dry-run                     # o que o robô traria hoje
-npm run social -- --dry-run                      # o post de hoje → out/social/
+npm run social -- --dry-run --slot news          # a notícia que sairia agora → out/social/
+npm run social -- --dry-run --slot extra         # o post extra de hoje
 npm run social -- --dry-run --today 2026-10-21   # finge que é outro dia
-npm run social -- --dry-run --slot reel          # força um formato: anniversary | weekly | vault | era | reel
+npm run social -- --dry-run --slot reel          # força um formato: today | new | vault | era | reel
 ```
 
 ## Correr localmente
@@ -175,13 +178,20 @@ edita [`automation/channels.json`](automation/channels.json) (afinamos juntos a 
 **8.4 — Testar o autopiloto do Instagram (modo de teste)**
 
 1. **Actions → Instagram autopilot → Run workflow**
-2. Em "What to post" deixa `auto` (ou escolhe um formato), deixa
+2. Em "What to post" escolhe `news` (uma notícia), `extra` (o post especial
+   do dia) ou um formato (`today`, `new`, `vault`, `era`, `reel`), deixa
    **"Test run"** ligado → **Run workflow**
 3. Quando acabar (2–4 min), abre a execução → em baixo, **Artifacts** →
    descarrega `instagram-…` → tens as imagens (ou o reel) e a legenda (`caption.txt`)
 
-Enquanto não ligares o Instagram, a execução diária das 17:07 faz o mesmo:
-desenha o post do dia e guarda-o como artefacto, sem publicar.
+Enquanto não ligares o Instagram, as 3 execuções diárias fazem o mesmo:
+desenham os posts e guardam-nos como artefacto, sem publicar.
+
+Opcional — usar a foto do próprio artigo nas notícias (em vez de uma foto do
+catálogo): **Settings → Secrets and variables → Actions → separador Variables
+→ New repository variable** → Name `NEWS_ARTICLE_IMAGES`, Value `1`. A legenda
+credita sempre ("Image via …"). Recomendo pedir autorização ao Lady Gaga Now
+antes de usar as fotos deles.
 
 **8.5 — Ligar o Instagram (fazemos juntos, passo a passo)**
 
@@ -192,7 +202,7 @@ Quando chegarmos lá, guio-te. Resumo do que vai ser preciso (igual ao The Vice 
 - [ ] Uma app no developers.facebook.com e um **token de Página que não expira**
 - [ ] Dois secrets novos no GitHub (como no 8.2): `INSTAGRAM_ACCESS_TOKEN` e `INSTAGRAM_USER_ID`
 
-A partir desse momento, a execução das 17:07 publica de verdade (as execuções
+A partir desse momento, as execuções agendadas publicam de verdade (as execuções
 manuais continuam em modo de teste, a não ser que desligues "Test run").
 
 **8.6 — Google (opcional, grátis)**

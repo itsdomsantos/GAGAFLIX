@@ -1,9 +1,11 @@
 name: Instagram autopilot
 
-# One post a day at ~17:00 UTC (evening in Europe, lunchtime in the US).
-# It picks the format itself: "N years ago today" when the timeline has a
-# moment on this date, the "New this week" roundup on Sundays, otherwise a
-# rotation (from the vault · era spotlight · promo reel).
+# Three posts a day (UTC; Lisbon = UTC+0 in winter, UTC+1 in summer):
+#   11:37  news   — a Lady Gaga story (Lady Gaga Now first, then Billboard, Variety…)
+#   17:07  extra  — "N years ago today" / "Today: …" (timeline + LGN calendar), else
+#                   the videos just added to GAGAFLIX, else a promo (vault · era · site reel)
+#   20:37  news   — a different story (never the same one twice)
+# A news slot with no fresh story simply skips.
 #
 # Publishes only when INSTAGRAM_ACCESS_TOKEN + INSTAGRAM_USER_ID exist
 # (plus SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY, for the data, the memory
@@ -11,14 +13,16 @@ name: Instagram autopilot
 # attaches it to the run — open the run → "Artifacts" to download it.
 on:
   schedule:
-    - cron: "7 17 * * *" # 17:07 UTC daily
+    - cron: "37 11 * * *" # news
+    - cron: "7 17 * * *"  # extra
+    - cron: "37 20 * * *" # news
   workflow_dispatch:
     inputs:
       slot:
-        description: "What to post (auto = let the autopilot choose)"
+        description: "What to post"
         type: choice
-        options: [auto, anniversary, weekly, vault, era, reel]
-        default: auto
+        options: [news, extra, today, new, vault, era, reel]
+        default: extra
       dry_run:
         description: "Test run: render only, don't publish"
         type: boolean
@@ -45,13 +49,19 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: Make sure ffmpeg is there (for reels)
         run: command -v ffmpeg || (sudo apt-get update && sudo apt-get install -y ffmpeg)
+      - name: Pick slot
+        id: slot
+        run: |
+          case "${{ github.event.schedule }}" in
+            "7 17 * * *") echo "slot=extra" >> "$GITHUB_OUTPUT" ;;
+            "") echo "slot=${{ inputs.slot }}" >> "$GITHUB_OUTPUT" ;;
+            *) echo "slot=news" >> "$GITHUB_OUTPUT" ;;
+          esac
       - name: Post
-        run: >
-          node --no-warnings automation/social/run.mjs
-          ${{ inputs.slot && inputs.slot != 'auto' && format('--slot {0}', inputs.slot) || '' }}
-          ${{ inputs.dry_run && '--dry-run' || '' }}
+        run: node --no-warnings automation/social/run.mjs --slot "${{ steps.slot.outputs.slot }}" ${{ inputs.dry_run && '--dry-run' || '' }}
         env:
           SITE_URL: ${{ vars.SITE_URL || 'https://gagaflix.com' }}
+          NEWS_ARTICLE_IMAGES: ${{ vars.NEWS_ARTICLE_IMAGES }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
@@ -59,7 +69,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: instagram-${{ github.run_number }}
+          name: instagram-${{ steps.slot.outputs.slot }}-${{ github.run_number }}
           path: out/social/
           if-no-files-found: ignore
           retention-days: 14
