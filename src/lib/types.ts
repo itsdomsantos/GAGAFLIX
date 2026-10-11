@@ -116,3 +116,26 @@ export const VIDEO_TYPE_LABELS: Record<VideoType, string> = {
   fashion: "Fashion",
   doc: "Docs & Extras",
 };
+
+/**
+ * A video waiting for approval in /admin/inbox — found by the daily YouTube
+ * robot (origin "rss") or suggested by a fan on /submit (origin "fan").
+ */
+export interface InboxItem {
+  id: string;
+  url: string;
+  source_id: string | null;
+  title: string;
+  thumbnail_url: string | null;
+  published_at: string | null;
+  channel_name: string | null;
+  origin: "rss" | "fan";
+  suggested_type: VideoType | null;
+  suggested_era: string | null;
+  note: string | null;
+  submitted_by: string | null;
+  status: "pending" | "approved" | "rejected";
+  video_id: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+}

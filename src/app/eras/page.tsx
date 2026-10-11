@@ -4,7 +4,7 @@ import type { Era } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Eras — GAGAFLIX" };
+export const metadata = { title: "Eras" };
 
 export default async function ErasPage() {
   const eras = await getEras();

@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "catalog": "node --no-warnings automation/catalog/ingest.mjs",
+    "social": "node --no-warnings automation/social/run.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
@@ -22,6 +24,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "playwright": "^1.56.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

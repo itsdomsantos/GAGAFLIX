@@ -4,7 +4,7 @@ import type { Tour } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Tours — GAGAFLIX" };
+export const metadata = { title: "Tours" };
 
 export default async function ToursPage() {
   const tours = await getTours();

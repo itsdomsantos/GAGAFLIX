@@ -1,0 +1,15 @@
+{
+  "_help": "Calendars the Instagram autopilot reads every day for Lady Gaga dates (anniversaries, releases, shows). ical: candidate iCalendar export URLs (the first that answers wins). dayPage: the calendar's page for one day ({Y}/{M}/{D} are filled in) — read when no iCal works. eventLinkPattern: what links to a single event look like on that page.",
+  "sources": [
+    {
+      "name": "Lady Gaga Now",
+      "ical": [
+        "https://ladygaganow.net/events/1-lgn-calendar/ical/",
+        "https://ladygaganow.net/events/1-lgn-calendar/download/",
+        "https://ladygaganow.net/index.php?app=calendar&module=calendar&controller=view&id=1&do=download"
+      ],
+      "dayPage": "https://ladygaganow.net/events/1-lgn-calendar/{Y}/{M}/{D}/",
+      "eventLinkPattern": "/events/event/\\d+-[\\w-]+/?$"
+    }
+  ]
+}
