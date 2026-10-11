@@ -242,9 +242,12 @@ export default function AdminInbox() {
                     {item.published_at ? ` · ${item.published_at.slice(0, 10)}` : ""}
                     {item.submitted_by ? ` · from ${item.submitted_by}` : ""}
                   </p>
-                  {item.note && (
-                    <p className="mt-1 text-sm italic text-muted">“{item.note}”</p>
-                  )}
+                  {item.note &&
+                    (item.origin === "fan" ? (
+                      <p className="mt-1 text-sm italic text-muted">“{item.note}”</p>
+                    ) : (
+                      <p className="mt-1 text-xs font-semibold text-muted">{item.note}</p>
+                    ))}
 
                   {tab === "pending" && d ? (
                     <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">

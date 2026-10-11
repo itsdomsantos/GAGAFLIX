@@ -1,0 +1,33 @@
+{
+  "_help": "How the robot searches ALL of YouTube for Lady Gaga videos (needs the free YOUTUBE_API_KEY secret; each search costs 100 of the 10,000 free daily units). fresh: searched every day for videos from the last `freshDays` days, newest first. archive: searched every day inside ONE year (a different year each day, 2008 → today), most viewed first — so the back catalogue fills in over time. Filters keep the inbox clean; edit freely.",
+  "fresh": [
+    "Lady Gaga",
+    "Lady Gaga live performance",
+    "Lady Gaga interview",
+    "Lady Gaga red carpet",
+    "Lady Gaga full show",
+    "Lady Gaga Mayhem Ball"
+  ],
+  "freshDays": 3,
+  "archive": [
+    "Lady Gaga live",
+    "Lady Gaga performance",
+    "Lady Gaga interview",
+    "Lady Gaga full concert",
+    "Lady Gaga awards show",
+    "Lady Gaga behind the scenes"
+  ],
+  "firstYear": 2008,
+  "minSeconds": 61,
+  "maxSeconds": 14400,
+  "minViews": { "fresh": 3000, "archive": 50000 },
+  "maxNewPerRun": 40,
+  "exclude": [
+    "cover", "covers", "reaction", "reacts", "reacting", "karaoke", "instrumental", "lyrics", "lyric video",
+    "slowed", "sped up", "8d audio", "nightcore", "remix contest", "ai cover", "ai version", "tutorial",
+    "makeup look", "dance tutorial", "piano tutorial", "guitar lesson", "how to sing", "vocal coach",
+    "type beat", "parody", "impression", "drag race", "lookalike", "tribute act", "audio only",
+    "#shorts", "tiktok compilation", "fortnite", "minecraft", "roblox"
+  ],
+  "blockedChannels": []
+}

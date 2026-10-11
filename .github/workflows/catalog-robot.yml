@@ -1,7 +1,9 @@
 name: Catalogue robot
 
 # Every day: reads the YouTube RSS feeds listed in automation/channels.json
-# (no API key) and drops new Lady Gaga videos into /admin/inbox for approval.
+# (no API key) and — with the free YOUTUBE_API_KEY secret — searches ALL of
+# YouTube (automation/youtube-search.json), then drops new Lady Gaga videos into
+# /admin/inbox for approval.
 # Nothing goes public on its own. Needs the SUPABASE_URL and
 # SUPABASE_SERVICE_ROLE_KEY secrets; without them it only reports (dry run).
 on:
@@ -28,3 +30,4 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}

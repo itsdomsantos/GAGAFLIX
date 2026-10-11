@@ -7,12 +7,10 @@
     { "name": "Jimmy Kimmel Live", "id": "UCa6vGFO9ty8v5KZJXQxdhaw", "defaultType": "interview" },
     { "name": "The Late Show with Stephen Colbert", "id": "UCMtFAi84ehTSYSE9XoHefig", "defaultType": "interview" },
     { "name": "Saturday Night Live", "id": "UCqFzWxSCi39LnW1JKFR3efg", "defaultType": "live" },
-    { "name": "The Graham Norton Show", "handle": "@TheGrahamNortonShow", "defaultType": "interview" },
     { "name": "Zane Lowe / Apple Music", "handle": "@AppleMusic", "defaultType": "interview" },
     { "name": "Hot Ones (First We Feast)", "handle": "@FirstWeFeast", "defaultType": "interview" },
 
     { "name": "Coachella", "handle": "@coachella", "defaultType": "live" },
-    { "name": "Recording Academy / GRAMMYs", "handle": "@recordingacademy", "defaultType": "live" },
     { "name": "NPR Music (Tiny Desk)", "handle": "@nprmusic", "defaultType": "live" },
     { "name": "BBC Radio 1", "handle": "@BBCRadio1", "defaultType": "live" },
 
