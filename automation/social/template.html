@@ -1,0 +1,230 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<!--
+  GAGAFLIX Instagram cards (1080×1350, 4:5). Rendered by automation/social/render.mjs.
+  Chrome Gothic, like the site: near-black, chrome lettering, one accent colour per era.
+  Content first: a full-bleed photo carries every card; type sits on top of it.
+-->
+<link id="fonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&family=Metal+Mania&display=block" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1350px; overflow: hidden; background: #0a0a0d; }
+  body { font-family: Archivo, system-ui, sans-serif; color: #ededf0; -webkit-font-smoothing: antialiased; }
+  #card { position: relative; width: 1080px; height: 1350px; overflow: hidden; background: #0a0a0d; --a: #e04e20; }
+  .abs { position: absolute; }
+  .fill { position: absolute; inset: 0; }
+
+  /* photo layers */
+  .photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .yt-hq { transform: scale(1.34); } /* hqdefault thumbnails are letterboxed 4:3 — crop the bars */
+  .shade-bottom { background: linear-gradient(180deg, rgba(10,10,13,0) 30%, rgba(10,10,13,.55) 55%, rgba(10,10,13,.94) 78%, #0a0a0d 100%); }
+  .shade-top { background: linear-gradient(180deg, rgba(10,10,13,.75) 0%, rgba(10,10,13,0) 22%); }
+  .tint { mix-blend-mode: soft-light; opacity: .55; }
+  .glow { background: radial-gradient(90% 60% at 50% 105%, color-mix(in srgb, var(--a) 55%, transparent), transparent 70%); opacity: .55; }
+  .grain { position: absolute; inset: 0; pointer-events: none; opacity: .10; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  /* type */
+  .chrome { background-image: linear-gradient(180deg, #ffffff 0%, #e4e6ec 30%, #b9bcc8 55%, #6e7280 78%, #c9ccd6 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .accent-chrome { background-image: linear-gradient(180deg, #fff 0%, color-mix(in srgb, var(--a) 35%, #fff) 35%, var(--a) 70%, color-mix(in srgb, var(--a) 60%, #000) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .metal { font-family: "Metal Mania", serif; font-weight: 400; letter-spacing: .01em; }
+  .cond { font-stretch: 68%; text-transform: uppercase; }
+  .kicker { font-size: 24px; font-weight: 700; letter-spacing: .32em; text-transform: uppercase; }
+  .pill { display: inline-flex; align-items: center; gap: 12px; padding: 13px 24px 12px; border-radius: 999px; border: 2px solid var(--a);
+    background: rgba(10,10,13,.55); backdrop-filter: blur(10px); font-size: 22px; font-weight: 700; letter-spacing: .26em; text-transform: uppercase; }
+  .pill .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--a); box-shadow: 0 0 14px var(--a); }
+  .meta { font-size: 24px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; color: #b9bcc8; }
+  .title { font-weight: 850; font-stretch: 70%; text-transform: uppercase; line-height: .9; letter-spacing: -.005em; text-wrap: balance; color: #fff;
+    text-shadow: 0 4px 40px rgba(0,0,0,.45); }
+  .body { font-size: 31px; line-height: 1.38; color: #d9d9e0; text-wrap: pretty; }
+  .clamp3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+  /* layout */
+  .top { position: absolute; left: 72px; right: 72px; top: 72px; display: flex; justify-content: space-between; align-items: center; }
+  .bottom { position: absolute; left: 72px; right: 72px; bottom: 150px; }
+  .foot { position: absolute; left: 72px; right: 72px; bottom: 62px; display: flex; justify-content: space-between; align-items: center; }
+  .wordmark { font-size: 58px; line-height: 1; }
+  .logo-img { height: 58px; width: auto; }
+  .site { font-size: 21px; font-weight: 700; letter-spacing: .28em; color: #b9bcc8; text-transform: uppercase; }
+  .rule { height: 2px; background: linear-gradient(90deg, var(--a), transparent); }
+  .credit { position: absolute; right: 24px; bottom: 150px; writing-mode: vertical-rl; transform: rotate(180deg); font-size: 15px; letter-spacing: .2em; color: rgba(255,255,255,.45); text-transform: uppercase; white-space: nowrap; }
+  .page { font-size: 21px; font-weight: 700; letter-spacing: .2em; color: #b9bcc8; }
+
+  /* anniversary */
+  .years { display: flex; align-items: flex-end; gap: 26px; margin-bottom: 26px; }
+  .years .n { font-weight: 900; font-stretch: 62%; font-size: 330px; line-height: .74; letter-spacing: -.04em; }
+  .years .l { font-weight: 800; font-stretch: 70%; font-size: 64px; line-height: .92; text-transform: uppercase; color: var(--a); padding-bottom: 6px; }
+
+  /* video */
+  .play { width: 58px; height: 58px; border-radius: 50%; background: var(--a); display: inline-grid; place-items: center; box-shadow: 0 0 34px color-mix(in srgb, var(--a) 70%, transparent); }
+  .play::after { content: ""; margin-left: 5px; border-left: 19px solid #0a0a0d; border-top: 12px solid transparent; border-bottom: 12px solid transparent; }
+  .tagrow { display: flex; align-items: center; gap: 20px; }
+  .tag { display: inline-block; font-size: 24px; font-weight: 800; letter-spacing: .3em; text-transform: uppercase; color: var(--a); }
+
+  /* weekly cover mosaic */
+  .mosaic { position: absolute; left: 0; right: 0; top: 0; height: 900px; display: grid; gap: 6px; }
+  .mosaic .cell { position: relative; overflow: hidden; background: #131318; }
+  .mosaic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: saturate(1.05) contrast(1.05); }
+
+  /* cta */
+  .monogram { width: 300px; height: 300px; }
+  .collage { position: absolute; inset: -40px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; filter: grayscale(.4) brightness(.45) blur(1px); transform: rotate(-4deg) scale(1.12); }
+  .collage img { width: 100%; height: 100%; object-fit: cover; aspect-ratio: 1; display: block; }
+</style>
+</head>
+<body>
+<div id="card"></div>
+<script>
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const $ = (id) => document.getElementById(id);
+
+/** A photo layer. YouTube hqdefault frames are letterboxed — crop them. */
+const photo = (src, pos = "50% 30%") =>
+  src ? `<img class="photo ${/\/hqdefault\.jpg/.test(src) ? "yt-hq" : ""}" src="${esc(src)}" style="object-position:${pos}" referrerpolicy="no-referrer" />` : "";
+
+const brand = (d) =>
+  d.logo ? `<img class="logo-img" src="${esc(d.logo)}" alt="GAGAFLIX" />` : `<span class="metal chrome wordmark">GAGAFLIX</span>`;
+
+const foot = (d, right) => `<div class="foot">${brand(d)}<span class="site">${right ?? "gagaflix.com"}</span></div>`;
+
+/** Fit a headline into its box by shrinking the font until it stops overflowing. */
+function fit(el, max, min, maxLines) {
+  if (!el) return;
+  let size = max;
+  el.style.fontSize = size + "px";
+  const lh = () => parseFloat(getComputedStyle(el).lineHeight) || size * 0.9;
+  while (size > min && (el.scrollHeight > lh() * maxLines + 2 || el.scrollWidth > el.clientWidth + 2)) {
+    size -= 4;
+    el.style.fontSize = size + "px";
+  }
+}
+
+const CARDS = {
+  /** "On this day": N years ago today. Photo-led, giant chrome numeral. */
+  anniversary(d) {
+    const round = d.years % 5 === 0;
+    return `
+      ${photo(d.image, d.imagePos)}
+      <div class="fill shade-top"></div>
+      <div class="fill shade-bottom"></div>
+      <div class="fill glow"></div>
+      <div class="top">
+        <span class="pill"><span class="dot"></span>${round ? `${d.years} year anniversary` : "On this day"}</span>
+        <span class="meta">${esc(d.dateLabel)}</span>
+      </div>
+      <div class="bottom">
+        <div class="years">
+          <span class="n ${round ? "accent-chrome" : "chrome"}">${d.years}</span>
+          <span class="l">${d.years === 1 ? "Year" : "Years"}<br/>ago<br/>today</span>
+        </div>
+        <h1 id="t" class="title" style="max-width: 936px">${esc(d.title)}</h1>
+        ${d.body ? `<p class="body clamp3" style="margin-top:24px; max-width: 900px">${esc(d.body)}</p>` : ""}
+      </div>
+      ${foot(d, d.eraName ? `${esc(d.eraName)} era` : undefined)}
+      <span class="credit">${esc(d.credit || "© respective owners · fan-made, non-profit")}</span>
+      <div class="grain"></div>`;
+  },
+
+  /** A single video: "From the vault" / "New this week". */
+  video(d) {
+    return `
+      ${photo(d.image, d.imagePos || "50% 35%")}
+      <div class="fill shade-top"></div>
+      <div class="fill shade-bottom"></div>
+      <div class="fill glow"></div>
+      <div class="top">
+        <span class="pill"><span class="dot"></span>${esc(d.label)}</span>
+        <span class="page">${esc(d.page || "")}</span>
+      </div>
+      <div class="bottom">
+        <div class="tagrow"><span class="play"></span><span class="tag">${esc(d.typeLabel)}</span></div>
+        <h1 id="t" class="title" style="margin-top:18px; max-width: 936px">${esc(d.title)}</h1>
+        <div class="rule" style="margin:30px 0 22px; width: 340px"></div>
+        <p class="meta">${esc([d.event, d.year, d.eraName && `${d.eraName} era`].filter(Boolean).join("  ·  "))}</p>
+      </div>
+      ${foot(d, "Watch on gagaflix.com")}
+      <span class="credit">${esc(d.credit || "© respective owners · fan-made, non-profit")}</span>
+      <div class="grain"></div>`;
+  },
+
+  /** Weekly roundup cover: a mosaic of what's new. */
+  weekly(d) {
+    const imgs = d.images.slice(0, 4);
+    const layout = imgs.length >= 4 ? "grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr" : imgs.length === 3 ? "grid-template-columns:1.3fr 1fr; grid-template-rows:1fr 1fr" : imgs.length === 2 ? "grid-template-rows:1fr 1fr" : "";
+    const cells = imgs.map((src, i) => `<div class="cell" style="${imgs.length === 3 && i === 0 ? "grid-row: span 2" : ""}">${photo(src, "50% 35%")}</div>`).join("");
+    return `
+      <div class="mosaic" style="${layout}">${cells}</div>
+      <div class="fill shade-top"></div>
+      <div class="fill" style="background: linear-gradient(180deg, rgba(10,10,13,.2) 0%, rgba(10,10,13,0) 30%, rgba(10,10,13,.85) 62%, #0a0a0d 72%)"></div>
+      <div class="fill glow"></div>
+      <div class="top">
+        <span class="pill"><span class="dot"></span>This week</span>
+        <span class="meta">${esc(d.range)}</span>
+      </div>
+      <div class="bottom">
+        <p class="kicker" style="color: var(--a)">${d.count} new on GAGAFLIX</p>
+        <h1 class="title chrome" style="font-size: 190px; margin-top: 14px; color: transparent">New this<br/>week</h1>
+      </div>
+      ${foot(d, "Swipe →")}
+      <div class="grain"></div>`;
+  },
+
+  /** Era spotlight: the era's photo, name, years and how much of it is on the site. */
+  era(d) {
+    return `
+      ${photo(d.image, "50% 30%")}
+      <div class="fill shade-top"></div>
+      <div class="fill shade-bottom"></div>
+      <div class="fill glow"></div>
+      <div class="top">
+        <span class="pill"><span class="dot"></span>Era spotlight</span>
+        <span class="meta">${esc(d.years)}</span>
+      </div>
+      <div class="bottom">
+        ${d.eraLogo
+          ? `<img src="${esc(d.eraLogo)}" style="max-height: 230px; max-width: 900px; object-fit: contain; object-position: left bottom; display:block" />`
+          : `<h1 id="t" class="title" style="max-width: 936px">${esc(d.name)}</h1>`}
+        <p class="body clamp3" style="margin-top: 26px; max-width: 900px">${esc(d.description)}</p>
+        <div class="rule" style="margin: 30px 0 22px; width: 340px"></div>
+        <p class="meta">${esc(d.stats)}</p>
+      </div>
+      ${foot(d)}
+      <span class="credit">© respective owners · fan-made, non-profit</span>
+      <div class="grain"></div>`;
+  },
+
+  /** Last slide of every carousel. */
+  cta(d) {
+    const imgs = (d.images || []).slice(0, 9);
+    return `
+      <div class="collage">${imgs.map((s) => `<img src="${esc(s)}" />`).join("")}</div>
+      <div class="fill" style="background: radial-gradient(70% 55% at 50% 45%, rgba(10,10,13,.55), rgba(10,10,13,.94))"></div>
+      <div class="fill glow" style="opacity:.8"></div>
+      <div class="fill" style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap: 30px; padding: 0 90px">
+        ${d.monogram}
+        <h1 class="title" style="font-size: 104px">${esc(d.line || "Every era. Every performance.")}</h1>
+        <p class="body" style="max-width: 760px">${esc(d.sub || "Music videos, live shows, interviews and fashion — all in one place.")}</p>
+        <span class="pill" style="margin-top: 16px; font-size: 26px"><span class="dot"></span>Link in bio · gagaflix.com</span>
+      </div>
+      <div class="foot" style="justify-content:center">${brand(d)}</div>
+      <div class="grain"></div>`;
+  },
+};
+
+window.renderCard = (kind, d) => {
+  const card = $("card");
+  card.style.setProperty("--a", d.accent || "#e04e20");
+  card.innerHTML = CARDS[kind](d);
+  fit($("t"), d.titleMax || 150, 64, d.titleLines || 3);
+};
+
+/** Wait for every image (or give up on it after 10 s). */
+window.imagesReady = () =>
+  Promise.all([...document.images].map((img) => img.complete ? 0 : new Promise((r) => {
+    img.addEventListener("load", r); img.addEventListener("error", r); setTimeout(r, 10000);
+  })));
+</script>
+</body>
+</html>

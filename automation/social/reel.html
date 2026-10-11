@@ -1,0 +1,176 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<!--
+  GAGAFLIX promo reel — 1080×1920, 15 s. Rendered frame by frame by automation/social/reel.mjs:
+  window.setup(data) once, then window.render(t) for every frame (deterministic, no real-time animation).
+  Only stills (era photos) + type + the catalogue's own numbers — never clips of the videos.
+-->
+<link id="fonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Metal+Mania&display=block" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #0a0a0d; }
+  body { font-family: Archivo, system-ui, sans-serif; color: #ededf0; -webkit-font-smoothing: antialiased; }
+  #stage { position: relative; width: 1080px; height: 1920px; overflow: hidden; --a: #e04e20; }
+  .layer { position: absolute; inset: 0; opacity: 0; }
+  .fill { position: absolute; inset: 0; }
+  img.bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; will-change: transform; }
+  .chrome { background-image: linear-gradient(180deg, #fff 0%, #e4e6ec 30%, #b9bcc8 55%, #6e7280 78%, #c9ccd6 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .metal { font-family: "Metal Mania", serif; }
+  .cond { font-stretch: 66%; font-weight: 900; text-transform: uppercase; line-height: .86; letter-spacing: -.01em; }
+  .kicker { font-size: 30px; font-weight: 700; letter-spacing: .34em; text-transform: uppercase; }
+  .grain { position: absolute; inset: 0; pointer-events: none; opacity: .11; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .shade { background: linear-gradient(180deg, rgba(10,10,13,.7) 0%, rgba(10,10,13,0) 18%, rgba(10,10,13,0) 36%, rgba(10,10,13,.72) 56%, rgba(10,10,13,.94) 76%, #0a0a0d 100%); }
+  .flash { position: absolute; inset: 0; background: var(--a); mix-blend-mode: screen; opacity: 0; }
+  .pill { display: inline-flex; align-items: center; gap: 14px; padding: 16px 30px 15px; border-radius: 999px; border: 2px solid var(--a); background: rgba(10,10,13,.55);
+    font-size: 28px; font-weight: 700; letter-spacing: .26em; text-transform: uppercase; }
+  .pill i { width: 12px; height: 12px; border-radius: 50%; background: var(--a); box-shadow: 0 0 16px var(--a); }
+  svg.monogram { width: 420px; height: 420px; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const clamp = (x) => Math.min(1, Math.max(0, x));
+const ease = (x) => 1 - (1 - clamp(x)) ** 3;
+const easeIn = (x) => clamp(x) ** 2;
+const span = (t, a, b) => clamp((t - a) / (b - a));
+
+let D, S = {};
+
+/** Timeline (seconds). */
+const INTRO = [0, 1.7];
+const ERA_START = 1.7, ERA_LEN = 1.35;
+let ERA_END, STATS, OUTRO;
+
+window.setup = (data) => {
+  D = data;
+  const n = D.eras.length;
+  ERA_END = ERA_START + n * ERA_LEN;
+  STATS = [ERA_END, ERA_END + 2.7];
+  OUTRO = [STATS[1], D.duration];
+  const stage = document.getElementById("stage");
+  stage.innerHTML = `
+    <div class="layer" id="intro" style="opacity:1">
+      <div class="fill" id="introGlow" style="background: radial-gradient(50% 30% at 50% 46%, color-mix(in srgb, var(--a) 55%, transparent), transparent 70%)"></div>
+      <div class="fill" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap: 34px">
+        <div id="mono">${D.monogram}</div>
+        <div id="word">${D.logo ? `<img src="${esc(D.logo)}" style="height:120px">` : `<span class="metal chrome" style="font-size:150px; line-height:1">GAGAFLIX</span>`}</div>
+        <div id="tagline" class="kicker" style="color:#b9bcc8">The ultimate Lady Gaga experience</div>
+      </div>
+    </div>
+    ${D.eras.map((e, i) => `
+      <div class="layer" id="era${i}" style="--a:${e.accent}">
+        <img class="bg" src="${esc(e.image)}" />
+        <div class="fill shade"></div>
+        <div class="fill" style="background: radial-gradient(90% 45% at 50% 108%, color-mix(in srgb, ${e.accent} 60%, transparent), transparent 70%); opacity:.7"></div>
+        <div class="flash"></div>
+        <div style="position:absolute; left:80px; right:80px; top:210px; display:flex; justify-content:space-between; align-items:center">
+          <span class="pill"><i></i>Era ${String(i + 1).padStart(2, "0")} / ${String(n).padStart(2, "0")}</span>
+        </div>
+        <div class="txt" style="position:absolute; left:80px; right:80px; bottom:420px">
+          <div class="kicker" style="color:${e.accent}">${esc(e.years)}</div>
+          <div class="cond eraName" style="font-size:${e.name.length > 14 ? 150 : e.name.length > 9 ? 190 : 240}px; margin-top: 20px; color:#fff; text-wrap: balance">${esc(e.name)}</div>
+        </div>
+      </div>`).join("")}
+    <div class="layer" id="stats">
+      <div class="fill" style="display:grid; grid-template-columns: repeat(3, 1fr); filter: grayscale(.5) brightness(.32); transform: scale(1.1)" id="statsBg">
+        ${D.eras.concat(D.eras).slice(0, 9).map((e) => `<img src="${esc(e.image)}" style="width:100%; height:100%; object-fit:cover">`).join("")}
+      </div>
+      <div class="fill" style="background: radial-gradient(70% 50% at 50% 50%, rgba(10,10,13,.4), #0a0a0d)"></div>
+      <div class="fill" style="display:flex; flex-direction:column; justify-content:center; padding: 0 80px; gap: 26px">
+        <div class="kicker" style="color: var(--a)">All in one place</div>
+        ${D.stats.map((s, i) => `<div class="stat" id="stat${i}" style="display:flex; align-items:baseline; gap: 28px">
+          <span class="cond chrome num" style="font-size: 270px">0</span>
+          <span class="cond" style="font-size: 96px; color:#fff">${esc(s.label)}</span></div>`).join("")}
+      </div>
+    </div>
+    <div class="layer" id="outro">
+      <div class="fill" style="background: radial-gradient(60% 40% at 50% 42%, color-mix(in srgb, var(--a) 45%, transparent), transparent 70%)"></div>
+      <div class="fill" style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap: 40px; padding: 0 80px 120px">
+        <div id="mono2">${D.monogram}</div>
+        <div class="cond" id="outLine" style="font-size: 150px; color:#fff">Every era.<br/><span class="chrome">Every performance.</span></div>
+        <span class="pill" id="outPill" style="font-size: 32px"><i></i>Link in bio · gagaflix.com</span>
+        <div id="outNote" style="font-size: 24px; letter-spacing:.2em; text-transform:uppercase; color:#8e8e9a">Fan-made · non-profit</div>
+      </div>
+    </div>
+    <div class="grain"></div>`;
+  S = {
+    intro: document.getElementById("intro"), mono: document.getElementById("mono"), word: document.getElementById("word"),
+    tagline: document.getElementById("tagline"), introGlow: document.getElementById("introGlow"),
+    eras: D.eras.map((_, i) => document.getElementById("era" + i)),
+    stats: document.getElementById("stats"), statsBg: document.getElementById("statsBg"),
+    statEls: D.stats.map((_, i) => document.getElementById("stat" + i)),
+    outro: document.getElementById("outro"), mono2: document.getElementById("mono2"), outLine: document.getElementById("outLine"),
+    outPill: document.getElementById("outPill"), outNote: document.getElementById("outNote"),
+  };
+};
+
+window.render = (t) => {
+  // intro
+  const ia = span(t, INTRO[0], INTRO[1]);
+  S.intro.style.opacity = t < INTRO[1] ? 1 : 0;
+  S.mono.style.transform = `scale(${0.82 + 0.18 * ease(t / 0.9)})`;
+  S.mono.style.opacity = ease(t / 0.5);
+  S.introGlow.style.opacity = 0.5 + 0.5 * Math.sin(t * 6) ** 2;
+  S.word.style.opacity = ease((t - 0.45) / 0.4);
+  S.word.style.transform = `translateY(${30 * (1 - ease((t - 0.45) / 0.4))}px)`;
+  S.tagline.style.opacity = ease((t - 0.9) / 0.4);
+  S.tagline.style.letterSpacing = `${0.6 - 0.26 * ease((t - 0.9) / 0.6)}em`;
+  void ia;
+
+  // eras: hard cuts, Ken Burns, accent flash on each cut, title slides up
+  S.eras.forEach((el, i) => {
+    const a = ERA_START + i * ERA_LEN, b = a + ERA_LEN;
+    const on = t >= a && t < b;
+    el.style.opacity = on ? 1 : 0;
+    if (!on) return;
+    const p = (t - a) / ERA_LEN;
+    const img = el.querySelector("img.bg");
+    const dir = i % 2 ? -1 : 1;
+    img.style.transform = `scale(${1.16 - 0.12 * p}) translateX(${dir * 18 * p}px)`;
+    el.querySelector(".flash").style.opacity = 0.55 * (1 - ease((t - a) / 0.16));
+    const txt = el.querySelector(".txt");
+    const k = ease((t - a - 0.08) / 0.35);
+    txt.style.transform = `translateY(${80 * (1 - k)}px)`;
+    txt.style.opacity = k;
+  });
+
+  // stats: numbers count up, staggered
+  const sOn = t >= STATS[0] && t < STATS[1];
+  S.stats.style.opacity = sOn ? 1 : 0;
+  if (sOn) {
+    S.statsBg.style.transform = `scale(${1.1 + 0.05 * span(t, STATS[0], STATS[1])})`;
+    D.stats.forEach((s, i) => {
+      const k = ease((t - STATS[0] - i * 0.25) / 0.9);
+      const el = S.statEls[i];
+      el.style.opacity = ease((t - STATS[0] - i * 0.25) / 0.25);
+      el.style.transform = `translateX(${-60 * (1 - k)}px)`;
+      el.querySelector(".num").textContent = Math.round(s.value * k) + (s.plus && k === 1 ? "+" : "");
+    });
+  }
+
+  // outro
+  const oOn = t >= OUTRO[0];
+  S.outro.style.opacity = oOn ? 1 : 0;
+  if (oOn) {
+    const o = t - OUTRO[0];
+    S.mono2.style.opacity = ease(o / 0.4);
+    S.mono2.style.transform = `scale(${0.85 + 0.15 * ease(o / 0.6)})`;
+    S.outLine.style.opacity = ease((o - 0.25) / 0.4);
+    S.outLine.style.transform = `translateY(${50 * (1 - ease((o - 0.25) / 0.4))}px)`;
+    S.outPill.style.opacity = ease((o - 0.7) / 0.4);
+    S.outNote.style.opacity = ease((o - 1.0) / 0.4);
+  }
+};
+
+window.imagesReady = () =>
+  Promise.all([...document.images].map((img) => img.complete ? 0 : new Promise((r) => {
+    img.addEventListener("load", r); img.addEventListener("error", r); setTimeout(r, 10000);
+  })));
+</script>
+</body>
+</html>

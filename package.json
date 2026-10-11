@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "catalog": "node --no-warnings automation/catalog/ingest.mjs",
+    "social": "node --no-warnings automation/social/run.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",

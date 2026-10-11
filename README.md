@@ -22,10 +22,42 @@ e o **Player Camaleão** escolhe o player certo automaticamente.
 - `/watch/[id]` — página de vídeo com o Player Camaleão
 - `/timeline` — a carreira de 2008 até hoje
 - `/search` — pesquisa instantânea (atalho: tecla `/`)
+- `/submit` — os fãs sugerem links de vídeos (caem na tua fila de aprovação)
 - `/admin` — painel privado de gestão de conteúdo (não indexado, login obrigatório)
+- `/admin/inbox` — fila de vídeos novos (do robô do YouTube e dos fãs): aprovar ou rejeitar
 
 Sem Supabase configurado, o site funciona com conteúdo de arranque embutido
 (`src/lib/seed.ts`). Com Supabase, todo o conteúdo passa a ser gerido no `/admin`.
+
+## 🤖 Automação (100% grátis)
+
+Tudo corre no **GitHub Actions** (grátis em repositórios públicos) e no teu
+Supabase grátis. Sem cartão, sem chaves pagas.
+
+| O quê | Quando | Onde está |
+|---|---|---|
+| **Robô do catálogo** — lê os feeds RSS dos canais do YouTube (sem chave), guarda os vídeos novos com "Gaga" no título na fila `/admin/inbox`, já com tipo e era sugeridos. Nada fica público sem a tua aprovação. Um vídeo rejeitado nunca volta a ser sugerido. | todos os dias, 05:23 UTC | `automation/catalog/` · lista de canais em `automation/channels.json` |
+| **Autopiloto do Instagram** — 1 post por dia, escolhido sozinho: **"N years ago today"** quando há um momento da timeline nesse dia; **"New this week"** ao domingo (carrossel com os vídeos novos da semana — nunca 1 post por vídeo); nos outros dias roda entre **From the vault** (um vídeo do catálogo), **Era spotlight** e um **reel promocional**. | todos os dias, 17:07 UTC | `automation/social/` |
+| **SEO** — `sitemap.xml`, `robots.txt`, títulos/descrições/imagens de partilha por vídeo e por era, e dados estruturados `VideoObject` (para os vídeos aparecerem nos resultados de vídeo do Google). | sempre | `src/app/sitemap.ts`, `robots.ts`, `/watch`, `/eras` |
+
+Regras do autopiloto: todo o texto vem só da timeline e do catálogo (que tu
+controlas) — nada é inventado. Nunca usa clips dos vídeos: só fotos das eras e
+thumbnails, com crédito na legenda. Legendas curtas, no máximo 1–2 emojis,
+"link in bio", "Fan-made, non-profit." e hashtags no fim. O que já foi
+publicado fica guardado em `site_settings` (chave `instagram_autopilot`), por
+isso nada se repete.
+
+**Modo de teste:** enquanto não houver chaves do Instagram, o autopiloto só
+*desenha* o post e anexa-o à execução (Actions → a execução → **Artifacts**).
+
+Para testar no teu computador (precisa de `npx playwright install chromium` e de ffmpeg para os reels):
+
+```bash
+npm run catalog -- --dry-run                     # o que o robô traria hoje
+npm run social -- --dry-run                      # o post de hoje → out/social/
+npm run social -- --dry-run --today 2026-10-21   # finge que é outro dia
+npm run social -- --dry-run --slot reel          # força um formato: anniversary | weekly | vault | era | reel
+```
 
 ## Correr localmente
 
@@ -105,14 +137,79 @@ reveres (corrigir o link ou apagar). Nada é apagado automaticamente.
   - `CRON_SECRET` = uma palavra-passe qualquer à tua escolha (a Vercel envia-a
     automaticamente ao chamar o cron; protege o endpoint)
 
-### 8. Logo
+### 8. Ativar a automação (~10 min)
+
+**8.1 — Criar a fila de vídeos e a pasta das imagens**
+
+1. Abre o Supabase → o teu projeto → **SQL Editor → New query**
+2. Abre o ficheiro [`supabase/automation.sql`](supabase/automation.sql) aqui no GitHub,
+   copia **tudo** e cola na query → **Run**
+3. Deve aparecer "Success". Confirma em **Table Editor** que existe a tabela `video_inbox`
+   e em **Storage** que existe o bucket `social` (público)
+
+**8.2 — Dar ao GitHub as chaves do Supabase**
+
+1. No Supabase: **Project Settings → API**. Vais precisar de:
+   - **Project URL** (algo como `https://xxxx.supabase.co`)
+   - **service_role key** (carrega em "Reveal"). ⚠️ É secreta: nunca a coles em
+     nenhum ficheiro nem a mostres a ninguém — só nos *secrets* do GitHub.
+2. No GitHub, abre este repositório → **Settings** (separador no topo)
+   → no menu da esquerda **Secrets and variables → Actions**
+3. Carrega em **New repository secret** e cria, um de cada vez:
+   - Name: `SUPABASE_URL` → Secret: o Project URL → **Add secret**
+     (se já existir por causa do keep-alive, não precisas de o criar outra vez)
+   - Name: `SUPABASE_SERVICE_ROLE_KEY` → Secret: a service_role key → **Add secret**
+
+**8.3 — Testar o robô do catálogo**
+
+1. No GitHub: separador **Actions** → à esquerda **Catalogue robot**
+2. **Run workflow** → **Run workflow** (botão verde)
+3. Espera ~1 minuto e abre a execução: o resumo mostra quantos vídeos novos
+   encontrou em cada canal
+4. Vai a `gagaflix.com/admin/inbox`: os vídeos estão lá à espera. Confirma o
+   tipo e a era e carrega **Approve** (fica logo no site) ou **Reject**
+
+A partir daqui corre sozinho todos os dias. Para seguir mais ou menos canais,
+edita [`automation/channels.json`](automation/channels.json) (afinamos juntos a lista).
+
+**8.4 — Testar o autopiloto do Instagram (modo de teste)**
+
+1. **Actions → Instagram autopilot → Run workflow**
+2. Em "What to post" deixa `auto` (ou escolhe um formato), deixa
+   **"Test run"** ligado → **Run workflow**
+3. Quando acabar (2–4 min), abre a execução → em baixo, **Artifacts** →
+   descarrega `instagram-…` → tens as imagens (ou o reel) e a legenda (`caption.txt`)
+
+Enquanto não ligares o Instagram, a execução diária das 17:07 faz o mesmo:
+desenha o post do dia e guarda-o como artefacto, sem publicar.
+
+**8.5 — Ligar o Instagram (fazemos juntos, passo a passo)**
+
+Quando chegarmos lá, guio-te. Resumo do que vai ser preciso (igual ao The Vice City News):
+
+- [ ] Conta do Instagram do GAGAFLIX como **profissional** (Criador ou Empresa)
+- [ ] Ligada a uma **Página do Facebook**
+- [ ] Uma app no developers.facebook.com e um **token de Página que não expira**
+- [ ] Dois secrets novos no GitHub (como no 8.2): `INSTAGRAM_ACCESS_TOKEN` e `INSTAGRAM_USER_ID`
+
+A partir desse momento, a execução das 17:07 publica de verdade (as execuções
+manuais continuam em modo de teste, a não ser que desligues "Test run").
+
+**8.6 — Google (opcional, grátis)**
+
+1. Vai a [search.google.com/search-console](https://search.google.com/search-console) → adiciona `gagaflix.com`
+2. Confirma o domínio (o Google dá-te um registo DNS para colar no teu registrar)
+3. Em **Sitemaps**, submete `sitemap.xml`. O Google passa a descobrir cada vídeo novo sozinho
+
+### 9. Logo
 
 Adiciona os ficheiros do teu logo flame a `public/`:
 
 - `public/logo.png` — o wordmark GAGAFLIX (fundo transparente)
 - `public/monogram.png` — o "GF" (para favicon/mobile)
 
-Depois diz e trocamos o placeholder tipográfico do header pelo logo real.
+Depois diz e trocamos o placeholder tipográfico do header pelo logo real. Os
+cartões e reels do Instagram usam `public/logo.png` automaticamente assim que existir.
 
 ---
 

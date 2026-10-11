@@ -18,7 +18,9 @@ const loadEras = cache(getEras);
 
 /** One plain sentence built only from the catalogue's own fields. */
 function describe(video: Video, era: Era | null): string {
-  const bits = [VIDEO_TYPE_LABELS[video.type].replace(/s$/, ""), video.event, era ? `${era.name} era` : null, video.date?.slice(0, 4)];
+  // Skip an event that only repeats the type ("Official Music Video" on a music video).
+  const event = video.event && !/^official (music )?video$/i.test(video.event.trim()) ? video.event : null;
+  const bits = [VIDEO_TYPE_LABELS[video.type].replace(/s$/, ""), event, era ? `${era.name} era` : null, video.date?.slice(0, 4)];
   return `Lady Gaga — ${video.title}. ${bits.filter(Boolean).join(" · ")}. Watch it on GAGAFLIX, the Lady Gaga fan archive.`;
 }
 

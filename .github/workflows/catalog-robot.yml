@@ -1,0 +1,30 @@
+name: Catalogue robot
+
+# Every day: reads the YouTube RSS feeds listed in automation/channels.json
+# (no API key) and drops new Lady Gaga videos into /admin/inbox for approval.
+# Nothing goes public on its own. Needs the SUPABASE_URL and
+# SUPABASE_SERVICE_ROLE_KEY secrets; without them it only reports (dry run).
+on:
+  schedule:
+    - cron: "23 5 * * *" # 05:23 UTC daily (odd minute: GitHub delays on-the-hour crons)
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Read the feeds
+        run: node --no-warnings automation/catalog/ingest.mjs
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
