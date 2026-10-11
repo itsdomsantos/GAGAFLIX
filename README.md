@@ -175,6 +175,28 @@ reveres (corrigir o link ou apagar). Nada é apagado automaticamente.
 A partir daqui corre sozinho todos os dias. Para seguir mais ou menos canais,
 edita [`automation/channels.json`](automation/channels.json) (afinamos juntos a lista).
 
+**8.3b — Pôr o robô a procurar no YouTube inteiro (recomendado, grátis)**
+
+Sem chave, o robô só lê os canais da lista. Com a chave grátis da YouTube Data
+API (não pede cartão; 10 000 unidades/dia chegam e sobram), ele pesquisa o
+YouTube **todo**, em qualquer canal: as novidades dos últimos dias e, para
+encher o arquivo, os vídeos mais vistos de um ano diferente por dia (2008 → hoje).
+Filtra sozinho Shorts, covers, reactions, karaoke, lyric videos de fãs e vídeos
+com poucas visualizações — e põe no máximo 40 por dia no Inbox, com as
+visualizações e a duração de cada um.
+
+1. Se já criaste a chave no passo 6, reutiliza-a. Senão:
+   [console.cloud.google.com](https://console.cloud.google.com) → cria um projeto →
+   **APIs & Services → Library** → **YouTube Data API v3** → **Enable** →
+   **APIs & Services → Credentials → Create credentials → API key** → copia
+2. No GitHub: **Settings → Secrets and variables → Actions → New repository secret**
+   → Name `YOUTUBE_API_KEY` → Secret: a chave → **Add secret**
+3. Em `/admin/automation` carrega em **🔎 Find new videos now** e vê o Inbox
+
+As pesquisas e os filtros estão em
+[`automation/youtube-search.json`](automation/youtube-search.json) (palavras a
+excluir, mínimo de visualizações, máximo por dia, canais bloqueados).
+
 **8.4 — Testar o autopiloto do Instagram (modo de teste)**
 
 1. **Actions → Instagram autopilot → Run workflow**
