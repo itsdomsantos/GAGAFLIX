@@ -15,7 +15,7 @@ export async function generateMetadata({
 }) {
   const { slug } = await params;
   const tour = await getTour(slug);
-  return { title: tour ? `${tour.name} — GAGAFLIX` : "Tours — GAGAFLIX" };
+  return { title: tour ? `${tour.name}` : "Tours" };
 }
 
 /**

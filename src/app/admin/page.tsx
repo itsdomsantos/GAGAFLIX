@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { getBrowserClient } from "@/lib/supabase";
 
 export default function AdminHome() {
-  const [counts, setCounts] = useState({ videos: 0, eras: 0, moments: 0, featured: 0, views30d: 0 });
+  const [counts, setCounts] = useState({ inbox: 0, videos: 0, eras: 0, moments: 0, featured: 0, views30d: 0 });
 
   useEffect(() => {
     const supabase = getBrowserClient();
@@ -15,8 +15,10 @@ export default function AdminHome() {
       supabase.from("eras").select("slug"),
       supabase.from("timeline_moments").select("id"),
       supabase.from("page_views").select("id", { count: "exact", head: true }).gte("created_at", since),
-    ]).then(([videos, eras, moments, views]) => {
+      supabase.from("video_inbox").select("id", { count: "exact", head: true }).eq("status", "pending"),
+    ]).then(([videos, eras, moments, views, inbox]) => {
       setCounts({
+        inbox: inbox.count ?? 0,
         videos: videos.data?.length ?? 0,
         featured: videos.data?.filter((v) => v.featured).length ?? 0,
         eras: eras.data?.length ?? 0,
@@ -27,6 +29,7 @@ export default function AdminHome() {
   }, []);
 
   const cards = [
+    { href: "/admin/inbox", label: "Inbox", value: counts.inbox, hint: "New videos found by the robot or suggested by fans — approve or reject." },
     { href: "/admin/videos", label: "Videos", value: counts.videos, hint: "Add and edit videos — paste a link and it's live." },
     { href: "/admin/videos", label: "Featured", value: counts.featured, hint: "Videos flagged as featured; the newest one opens the homepage." },
     { href: "/admin/eras", label: "Eras", value: counts.eras, hint: "Names, descriptions and colors for every era." },

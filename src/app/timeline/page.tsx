@@ -2,7 +2,7 @@ import { getEras, getTimeline } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Timeline — GAGAFLIX" };
+export const metadata = { title: "Timeline" };
 
 const monthNames = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",

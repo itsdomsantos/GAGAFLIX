@@ -7,7 +7,7 @@ import { getArticlePreview, getNews } from "@/lib/news";
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: "News — GAGAFLIX",
+  title: "News",
   robots: { index: false, follow: true },
 };
 

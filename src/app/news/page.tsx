@@ -5,7 +5,7 @@ import { getNews } from "@/lib/news";
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: "News — GAGAFLIX",
+  title: "News",
   description: "Fresh Lady Gaga headlines from around the web, updated hourly.",
 };
 

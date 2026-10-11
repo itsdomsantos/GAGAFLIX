@@ -1,5 +1,7 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 import EraTheme from "@/components/EraTheme";
 import FilmGrain from "@/components/FilmGrain";
 import Row from "@/components/Row";
@@ -9,6 +11,34 @@ import { VIDEO_TYPES, VIDEO_TYPE_LABELS } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
+const loadEra = cache(getEra);
+const loadVideos = cache(getVideos);
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const [era, videos] = await Promise.all([loadEra(slug), loadVideos()]);
+  if (!era) return { title: "Era not found" };
+  const count = videos.filter((v) => v.era_slug === era.slug).length;
+  const title = `${era.name} era (${era.years}) — Lady Gaga`;
+  const description = `${era.description} ${count} video${count === 1 ? "" : "s"} on GAGAFLIX.`;
+  return {
+    title,
+    description,
+    alternates: { canonical: `/eras/${era.slug}` },
+    openGraph: {
+      title,
+      description,
+      url: `/eras/${era.slug}`,
+      images: era.image_url ? [{ url: era.image_url, alt: era.name }] : undefined,
+    },
+    twitter: { card: "summary_large_image", title, description },
+  };
+}
+
 /** Cada era é uma réplica da homepage, dedicada só a essa era. */
 export default async function EraPage({
   params,
@@ -16,7 +46,7 @@ export default async function EraPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const [era, videos] = await Promise.all([getEra(slug), getVideos()]);
+  const [era, videos] = await Promise.all([loadEra(slug), loadVideos()]);
   if (!era) notFound();
 
   const eraVideos = videos.filter((v) => v.era_slug === era.slug);

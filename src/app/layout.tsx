@@ -10,6 +10,7 @@ import EraTransition from "@/components/EraTransition";
 import Analytics from "@/components/Analytics";
 import MusicPlayer from "@/components/MusicPlayer";
 import { getHiddenPages } from "@/lib/data";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
 
 const archivo = Archivo({
   variable: "--font-archivo",
@@ -22,10 +23,27 @@ const metalMania = Metal_Mania({
   subsets: ["latin"],
 });
 
+const description =
+  "The whole Lady Gaga universe in one place: live performances, music videos, interviews and more. By Little Monsters, to Little Monsters.";
+
 export const metadata: Metadata = {
-  title: "GAGAFLIX — The Ultimate Lady Gaga Experience",
-  description:
-    "The whole Lady Gaga universe in one place: live performances, music videos, interviews and more. By Little Monsters, to Little Monsters.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "GAGAFLIX — The Ultimate Lady Gaga Experience",
+    template: "%s — GAGAFLIX",
+  },
+  description,
+  applicationName: SITE_NAME,
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: "GAGAFLIX — The Ultimate Lady Gaga Experience",
+    description,
+    url: "/",
+    images: [{ url: "/icon-512.png", width: 512, height: 512, alt: "GAGAFLIX" }],
+  },
+  twitter: { card: "summary_large_image" },
   manifest: "/manifest.webmanifest",
   // Makes the iOS home-screen shortcut open full-screen and show just "GAGAFLIX".
   appleWebApp: {
@@ -54,7 +72,10 @@ export default async function RootLayout({
         <footer className="border-t border-line px-6 py-8 text-center text-sm text-muted">
           <span className="font-display text-lg chrome-text align-middle mr-2">GAGAFLIX</span>
           by Little Monsters, to Little Monsters. Every video plays from its
-          original platform.
+          original platform.{" "}
+          <a href="/submit" className="underline decoration-line underline-offset-4 hover:text-text">
+            Suggest a video
+          </a>
         </footer>
         <BottomBar hidden={hidden} />
         <InstallDock />
