@@ -1,35 +1,38 @@
 /**
- * GAGAFLIX site reel — 1080×1920 MP4, ~23 s. The REAL site, filmed on a phone
- * (390×844), scene by scene: home → an era (the whole site re-colours) → a video →
- * timeline → a tour setlist → search. Copy sits above the phone; wordmark intro
- * and "link in bio" end card. Only the site's own interface — never clips of videos.
+ * GAGAFLIX site reel — 1080×1920 MP4, ~25 s.
+ *
+ *  1. Hook: Lady Gaga, era after era (photos flashing), then the GAGAFLIX wordmark.
+ *     Drop a vertical clip at automation/social/reel-intro.mp4 (or REEL_INTRO=path) and
+ *     it plays under the same text instead of the photos (first 4 s).
+ *  2. The REAL site on a phone, recorded in real time while the reel uses it — a ring
+ *     shows every tap: home → swipe the eras → tap one (the whole site re-colours) →
+ *     open a video → a tour setlist, tap a song → the timeline → live search.
+ *  3. End card over a collage of the eras: wordmark, "link in bio".
+ * Only the site's own interface and stills — never clips of Gaga's videos.
  *
  *   REEL_SITE_URL=https://gagaflix.com node automation/social/run.mjs --slot reel --dry-run
- *
- * Local preview without YouTube access: REEL_MOCK_IMAGES=1 swaps YouTube thumbnails for
- * the era photos in public/eras/ (preview only — never used for a real post).
+ * Local preview without YouTube: REEL_MOCK_IMAGES=1 swaps YouTube thumbnails for the era photos.
  * The track is silent on purpose (no licensed music via the API); add a sound in the app.
  */
-import { spawn } from "node:child_process";
-import { mkdirSync, readFileSync, readdirSync } from "node:fs";
+import { spawn, spawnSync } from "node:child_process";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { ROOT } from "../lib.mjs";
-import { openBrowser } from "./render.mjs";
+import { asSrc, openBrowser } from "./render.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FPS = 30;
 const PHONE = { width: 390, height: 844 };
+const FFMPEG = process.env.FFMPEG_PATH || "ffmpeg";
 
-const ease = (x) => 1 - (1 - Math.min(1, Math.max(0, x))) ** 3;
-const easeInOut = (x) => {
-  const t = Math.min(1, Math.max(0, x));
-  return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
-};
+const clamp = (x) => Math.min(1, Math.max(0, x));
+const sleepUntil = (t0, ms) => new Promise((r) => setTimeout(r, Math.max(0, t0 + ms - Date.now())));
 
 function encoder(file) {
   const ff = spawn(
-    process.env.FFMPEG_PATH || "ffmpeg",
+    FFMPEG,
     [
       "-y", "-loglevel", "error",
       "-f", "image2pipe", "-framerate", String(FPS), "-i", "-",
@@ -51,6 +54,20 @@ function encoder(file) {
   };
 }
 
+/** Owner's intro clip → JPEG frames (max 4 s), or null. */
+function introFrames() {
+  const clip = process.env.REEL_INTRO || join(HERE, "reel-intro.mp4");
+  if (!existsSync(clip)) return null;
+  const dir = mkdtempSync(join(tmpdir(), "gf-intro-"));
+  const r = spawnSync(FFMPEG, ["-loglevel", "error", "-t", "4", "-i", clip, "-vf", `fps=${FPS},scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920`, "-q:v", "3", join(dir, "%04d.jpg")]);
+  if (r.status !== 0) {
+    console.warn("  intro clip could not be read — using the photos instead");
+    return null;
+  }
+  const files = readdirSync(dir).filter((f) => f.endsWith(".jpg")).sort();
+  return files.length ? files.map((f) => pathToFileURL(join(dir, f)).href) : null;
+}
+
 /**
  * { site, videos, eras, stats: { videos, eras, years } } → { video, cover }
  */
@@ -66,6 +83,8 @@ export async function renderSiteReel({ site, videos, eras, stats }, outDir, brow
     deviceScaleFactor: 2,
     isMobile: true,
     hasTouch: true,
+    // the site is a PWA: its service worker would fetch images outside our control
+    serviceWorkers: "block",
     userAgent:
       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1",
   });
@@ -84,6 +103,7 @@ export async function renderSiteReel({ site, videos, eras, stats }, outDir, brow
     );
   }
   const page = await ctx.newPage();
+
   const open = async (path) => {
     try {
       const res = await page.goto(SITE + path, { waitUntil: "networkidle", timeout: 60000 });
@@ -91,108 +111,258 @@ export async function renderSiteReel({ site, videos, eras, stats }, outDir, brow
     } catch {
       return false;
     }
-    await page.waitForTimeout(900);
+    await page.waitForTimeout(700);
     return true;
   };
-  const scrollTo = (y) => page.evaluate((v) => window.scrollTo(0, v), Math.round(y));
-  const maxScroll = (cap) => page.evaluate((c) => Math.min(c, document.documentElement.scrollHeight - innerHeight), cap);
+
+  /** Smooth, eased scroll inside the page (real time). */
+  const scrollTo = (y, ms) =>
+    page.evaluate(
+      ([to, dur]) =>
+        new Promise((done) => {
+          const from = scrollY;
+          const s = performance.now();
+          const step = (n) => {
+            const p = Math.min(1, (n - s) / dur);
+            const e = p < 0.5 ? 4 * p * p * p : 1 - (-2 * p + 2) ** 3 / 2;
+            scrollTo(0, from + (to - from) * e);
+            if (p < 1) requestAnimationFrame(step);
+            else done();
+          };
+          requestAnimationFrame(step);
+        }),
+      [Math.max(0, Math.round(y)), ms],
+    );
+  /** Page y that puts the element at `frac` of the screen height. */
+  const yFor = (sel, frac = 0.45) =>
+    page.evaluate(
+      ([s, f]) => {
+        const el = document.querySelector(s);
+        if (!el) return null;
+        return scrollY + el.getBoundingClientRect().top - innerHeight * f;
+      },
+      [sel, frac],
+    );
+  /** Centre of the first matching element that is on screen (or null). */
+  const centre = (sel, pick = "first") =>
+    page.evaluate(
+      ([s, how]) => {
+        const els = [...document.querySelectorAll(s)]
+          .map((el) => ({ el, r: el.getBoundingClientRect() }))
+          .filter(({ r }) => r.width > 8 && r.height > 8 && r.top >= 60 && r.bottom <= innerHeight - 70 && r.left >= 0 && r.right <= innerWidth);
+        if (!els.length) return null;
+        const c = how === "middle" ? els.sort((a, b) => Math.abs(a.r.left + a.r.width / 2 - innerWidth / 2) - Math.abs(b.r.left + b.r.width / 2 - innerWidth / 2))[0] : els[0];
+        return { x: c.r.left + c.r.width / 2, y: c.r.top + c.r.height / 2 };
+      },
+      [sel, pick],
+    );
+
+  /**
+   * Record `ms` of the live page while `script(t0, tap, mark)` drives it in real time:
+   * sharp full-resolution captures back to back (~13 fps), so animations (the era
+   * transition, carousels, typing) are filmed as they really play.
+   * Returns { frames: [{t, data}], taps: [{t, x, y}], marks, ms }.
+   */
+  async function take(ms, script) {
+    await page.bringToFront(); // a background tab gets its timers & animations throttled
+    const frames = [];
+    const taps = [];
+    const marks = {};
+    const t0 = Date.now();
+    const tap = async (pt) => {
+      if (!pt) return false;
+      taps.push({ t: Date.now() - t0, x: pt.x, y: pt.y });
+      await page.mouse.click(pt.x, pt.y);
+      return true;
+    };
+    const mark = (name) => (marks[name] = Date.now() - t0);
+    const driving = (async () => {
+      try {
+        await script?.(t0, tap, mark);
+      } catch (err) {
+        console.warn(`  reel: a step failed (${err.message.split("\n")[0]}) — keeping what was filmed`);
+      }
+    })();
+    while (Date.now() - t0 < ms) {
+      const at = Date.now() - t0;
+      try {
+        const buf = await page.screenshot({ type: "jpeg", quality: 82 });
+        frames.push({ t: at, data: buf.toString("base64") });
+      } catch {
+        await new Promise((r) => setTimeout(r, 30)); // mid-navigation: try again
+      }
+    }
+    await driving;
+    if (process.env.REEL_DEBUG) console.log("  [debug]", page.url(), frames.length, "frames", JSON.stringify(taps), await page.evaluate(() => {
+      const c = [...document.querySelectorAll("div")].find((d) => getComputedStyle(d).zIndex === "100");
+      return "veil:" + (c ? `${c.style.background || "-"} pe=${c.style.pointerEvents}` : "none");
+    }));
+    return { frames, taps, marks, ms };
+  }
+
+  // ---- what the reel uses — picked from the catalogue ----
+  const count = (slug) => videos.filter((v) => v.era_slug === slug).length;
+  const showEra = eras.find((e) => e.slug === "chromatica") ?? [...eras].sort((a, b) => count(b.slug) - count(a.slug))[0];
+  const star = videos.find((v) => v.is_hero) ?? videos.find((v) => v.featured) ?? videos[0];
+  const query = (star?.title.split(/\s[—–-]\s|\s\(/)[0] ?? "bad romance").toLowerCase();
+  const photos = eras.filter((e) => e.image).map((e) => asSrc(e.image));
 
   // ---- the compositor ----
   const comp = await browser.newPage({ viewport: { width: 540, height: 960 }, deviceScaleFactor: 2 });
   await comp.goto(pathToFileURL(join(HERE, "site-reel.html")).href);
   await comp.evaluate(() => document.fonts.ready);
+  await comp.evaluate((d) => window.setup(d), { collage: photos });
 
   const video = join(outDir, "reel.mp4");
   const cover = join(outDir, "reel-cover.jpg");
   const enc = encoder(video);
   let frame = 0;
-  let src = null;
-  let coverDone = false;
-
-  // what the reel films — picked from the catalogue
-  const bySlug = Object.fromEntries(eras.map((e) => [e.slug, e]));
-  const count = (slug) => videos.filter((v) => v.era_slug === slug).length;
-  const era = [...eras].sort((a, b) => count(b.slug) - count(a.slug) || b.sort - a.sort)[0];
-  const star = videos.find((v) => v.is_hero) ?? videos.find((v) => v.featured) ?? videos[0];
-  const starEra = star?.era_slug ? bySlug[star.era_slug] : null;
-  const query = (star?.title.split(/\s[—–-]\s|\s\(/)[0] ?? "bad romance").toLowerCase();
-
   const emit = async (state) => {
     await comp.evaluate((s) => window.set(s), state);
     await enc.write(await comp.screenshot({ type: "jpeg", quality: 90 }));
     frame++;
     if (frame % (FPS * 5) === 0) console.log(`  site reel ${frame / FPS}s`);
   };
-  /** Film the phone for `secs`: `step(i, n)` drives the site; the screen is re-grabbed at 15 fps. */
-  const film = async (secs, copy, accent, step, { enterFrom = 1 } = {}) => {
-    const n = Math.round(secs * FPS);
+
+  /**
+   * Turn a recorded take into video frames. `copies`: [{ at (ms), k, t, s, accent }].
+   * `enterPhone`: the phone rises into view at the start of the take.
+   */
+  async function play(rec, copies, { enterPhone = false } = {}) {
+    let fi = 0;
+    const n = Math.round((rec.ms / 1000) * FPS);
     for (let i = 0; i < n; i++) {
-      await step?.(i, n);
-      if (i % 2 === 0 || !src) src = `data:image/jpeg;base64,${(await page.screenshot({ type: "jpeg", quality: 80 })).toString("base64")}`;
-      const t = frame / FPS;
+      const vt = (i / FPS) * 1000;
+      while (fi + 1 < rec.frames.length && rec.frames[fi + 1].t <= vt) fi++;
+      const copy = [...copies].reverse().find((c) => c.at <= vt) ?? copies[0];
+      const tap = rec.taps.find((tp) => vt >= tp.t - 180 && vt <= tp.t + 650);
+      const fadeOut = i > n - 5 ? (i - (n - 5)) / 5 : 0;
       await emit({
-        accent,
-        phone: { src, enter: enterFrom < 1 ? enterFrom + (1 - enterFrom) * ease(i / 14) : 1, y: Math.sin(t * 1.3) * 3, scale: 0.97 + 0.03 * ease(i / 8) },
-        copy: { ...copy, p: i / 12, out: i > n - 6 ? (i - (n - 6)) / 6 : 0 },
-        flash: i < 4 ? 0.35 * (1 - i / 4) : 0,
+        accent: copy.accent,
+        phone: { src: `data:image/jpeg;base64,${rec.frames[fi].data}`, enter: enterPhone ? clamp(i / 14) : 1 },
+        tap: tap ? { x: tap.x, y: tap.y, p: (vt - (tap.t - 180)) / 830 } : null,
+        copy: { k: copy.k, t: copy.t, s: copy.s, a: Math.min(clamp((vt - copy.at) / 250), 1 - fadeOut), rise: clamp((vt - copy.at) / 400) },
+        flash: i < 4 ? 0.3 * (1 - i / 4) : 0,
       });
-      if (!coverDone && copy.cover && i === Math.floor(n * 0.6)) {
-        await comp.screenshot({ path: cover, type: "jpeg", quality: 92 });
-        coverDone = true;
-      }
     }
-  };
+  }
 
-  // 0 · hook — the wordmark
-  for (let i = 0, n = Math.round(1.6 * FPS); i < n; i++) await emit({ accent: "#e04e20", hook: i / n });
-
-  // 1 · home
-  if (await open("/")) {
-    const max = await maxScroll(1400);
-    await film(3.6, { k: "01 · Home", t: "Every era. One home.", s: "Music videos, live shows, interviews and fashion — all of Lady Gaga in one place.", cover: true }, "#e04e20",
-      (i, n) => scrollTo(max * easeInOut((i - 20) / (n - 20))), { enterFrom: 0 });
-  }
-  // 2 · an era — the site re-colours itself
-  if (era && (await open(`/eras/${era.slug}`))) {
-    const max = await maxScroll(900);
-    await film(3.2, { k: "02 · Eras", t: `Each era, its own world.`, s: `${era.name}: the whole site takes on its colour.` }, era.accent,
-      (i, n) => scrollTo(max * easeInOut((i - 18) / (n - 18))));
-  }
-  // 3 · a video
-  if (star && (await open(`/watch/${star.id}`))) {
-    await film(2.8, { k: "03 · Watch", t: "Every performance, one tap.", s: "It plays straight from the original source." }, starEra?.accent ?? "#e04e20",
-      (i, n) => scrollTo(260 * easeInOut((i - 30) / (n - 30))));
-  }
-  // 4 · timeline
-  if (await open("/timeline")) {
-    const max = await maxScroll(3200);
-    await film(3.0, { k: "04 · Timeline", t: "Her whole career, day by day.", s: stats.years ? `${stats.years} years of moments, from the start to today.` : "Every milestone, from the start to today." }, "#e04e20",
-      (i, n) => scrollTo(max * easeInOut(i / n)));
-  }
-  // 5 · a tour setlist
-  if ((await open("/tours/the-mayhem-ball")) || (await open("/tours"))) {
-    const max = await maxScroll(1600);
-    await film(3.0, { k: "05 · Tours", t: "Setlists you can tap.", s: "Every song, straight to the performance." }, "#e04e20",
-      (i, n) => scrollTo(max * easeInOut((i - 10) / (n - 10))));
-  }
-  // 6 · search, typed live
-  if (await open("/search")) {
-    await page.locator("input").first().click().catch(() => {});
-    await film(3.0, { k: "06 · Search", t: "Find anything in a second.", s: "Press / on desktop — or just start typing." }, "#e04e20", async (i) => {
-      const chars = Math.floor(Math.max(0, i - 10) / 3);
-      if (chars > 0 && chars <= query.length && (i - 10) % 3 === 0) {
-        await page.keyboard.type(query[chars - 1]);
-        await page.waitForTimeout(40);
-      }
+  // ===== 0 · hook — Lady Gaga, era after era (or the owner's clip), then the wordmark =====
+  const clip = introFrames();
+  const hookSecs = clip ? Math.min(4, clip.length / FPS) : 2.8;
+  const hookN = Math.round(hookSecs * FPS);
+  const PER = 9; // frames per photo
+  for (let i = 0; i < hookN; i++) {
+    const t = i / FPS;
+    const logo = clamp((t - (hookSecs - 0.85)) / 0.3);
+    const idx = Math.floor(i / PER) % Math.max(1, photos.length);
+    const era = eras.filter((e) => e.image)[idx];
+    await emit({
+      accent: era?.accent ?? "#e04e20",
+      hook: {
+        img: clip ? clip[Math.min(i, clip.length - 1)] : photos[idx],
+        zoom: clip ? 1 : 1.14 - 0.06 * ((i % PER) / PER),
+        flash: clip ? 0 : i % PER < 2 ? 0.45 * (1 - (i % PER) / 2) : 0,
+        text: clamp((t - 0.2) / 0.35) * (1 - logo),
+        logo,
+      },
     });
+    if (i === Math.round(hookN * 0.55)) await comp.screenshot({ path: cover, type: "jpeg", quality: 92 });
   }
 
-  // 7 · end card
+  const HOME = "#e04e20";
+  // ===== A · home → swipe the eras → tap one (site re-colours) → open a video =====
+  if (await open("/")) {
+    const rec = await take(10400, async (t0, tap, mark) => {
+      // the era carousel's circles are labelled "<Era> era"
+      const CIRCLE = 'a[aria-label$=" era"]';
+      const target = `a[aria-label="${showEra?.name} era"]`;
+      await sleepUntil(t0, 350);
+      const y = await yFor(CIRCLE, 0.4);
+      if (y != null) await scrollTo(y, 1400);
+      await sleepUntil(t0, 1850);
+      // swipe the carousel until the chosen era sits in the middle, like a thumb would
+      await page.evaluate(
+        ([circle, sel]) =>
+          new Promise((done) => {
+            const link = document.querySelector(sel) ?? document.querySelector(circle);
+            const box = link?.closest("[data-scroller]") ?? link?.parentElement;
+            if (!link || !box) return done();
+            const from = box.scrollLeft;
+            const to = Math.max(0, link.offsetLeft - (box.clientWidth - link.offsetWidth) / 2);
+            const s = performance.now();
+            const step = (n) => {
+              const p = Math.min(1, (n - s) / 1000);
+              box.scrollLeft = from + (to - from) * (p < 0.5 ? 4 * p * p * p : 1 - (-2 * p + 2) ** 3 / 2);
+              if (p < 1) requestAnimationFrame(step);
+              else done();
+            };
+            requestAnimationFrame(step);
+          }),
+        [CIRCLE, target],
+      );
+      await sleepUntil(t0, 3050);
+      mark("era");
+      await tap((await centre(target)) ?? (await centre(CIRCLE, "middle")));
+      await sleepUntil(t0, 4800);
+      const y2 = await yFor('[data-scroller] a[href^="/watch/"]', 0.5);
+      if (y2 != null) await scrollTo(y2, 1300);
+      await sleepUntil(t0, 6350);
+      mark("watch");
+      await tap(await centre('[data-scroller] a[href^="/watch/"]'));
+      await sleepUntil(t0, 8300);
+      await scrollTo(300, 1000);
+    });
+    const eraAccent = showEra?.accent ?? HOME;
+    await play(
+      rec,
+      [
+        { at: 0, k: "01 · Home", t: "Every era. One home.", s: "Music videos, live shows, interviews and fashion — all of Lady Gaga.", accent: HOME },
+        { at: (rec.marks.era ?? 2950) - 250, k: "02 · Eras", t: "Tap an era. The site changes colour.", s: `Every era is its own world — ${showEra?.name ?? "MAYHEM"} turns everything ${showEra?.slug === "chromatica" ? "pink" : "to its colour"}.`, accent: eraAccent },
+        { at: (rec.marks.watch ?? 6350) - 250, k: "03 · Watch", t: "Every performance, one tap.", s: "It plays straight from the original source.", accent: eraAccent },
+      ],
+      { enterPhone: true },
+    );
+  }
+
+  // ===== B · a tour setlist → tap a song → its performance =====
+  if ((await open("/tours/the-mayhem-ball")) || (await open("/tours"))) {
+    const rec = await take(4200, async (t0, tap) => {
+      await sleepUntil(t0, 250);
+      const y = await yFor('ol a[href^="/watch/"]', 0.5);
+      if (y != null) await scrollTo(y, 1600);
+      await sleepUntil(t0, 2350);
+      await tap(await centre('ol a[href^="/watch/"]'));
+    });
+    await play(rec, [{ at: 0, k: "04 · Tours", t: "Tap a song. Watch it live.", s: "Every tour, its setlist in order — each song opens the performance.", accent: HOME }]);
+  }
+
+  // ===== C · the timeline =====
+  if (await open("/timeline")) {
+    const rec = await take(2800, async (t0) => {
+      await sleepUntil(t0, 150);
+      const max = await page.evaluate(() => Math.min(3600, document.documentElement.scrollHeight - innerHeight));
+      await scrollTo(max, 2500);
+    });
+    await play(rec, [{ at: 0, k: "05 · Timeline", t: "Her whole career, day by day.", s: stats.years ? `${stats.years} years of moments, from the start to today.` : "Every milestone, from the start to today.", accent: HOME }]);
+  }
+
+  // ===== D · live search =====
+  if (await open("/search")) {
+    const rec = await take(3400, async (t0, tap) => {
+      await sleepUntil(t0, 250);
+      await tap(await centre("input"));
+      await sleepUntil(t0, 600);
+      await page.keyboard.type(query, { delay: 85 });
+    });
+    await play(rec, [{ at: 0, k: "06 · Search", t: "Find anything in a second.", s: "Songs, shows, interviews — just start typing.", accent: HOME }]);
+  }
+
+  // ===== end card =====
   const statLine = [stats.videos && `${stats.videos}+ videos`, stats.eras && `${stats.eras} eras`, stats.years && `${stats.years} years`].filter(Boolean).join("  ·  ");
-  for (let i = 0, n = Math.round(3 * FPS); i < n; i++) await emit({ accent: "#e04e20", end: i / n, stats: statLine });
+  for (let i = 0, n = Math.round(3 * FPS); i < n; i++) await emit({ accent: HOME, end: i / n, stats: statLine });
 
   await enc.end();
-  if (!coverDone) await comp.screenshot({ path: cover, type: "jpeg", quality: 92 });
   await comp.close();
   await ctx.close();
   if (own) await browser.close();
