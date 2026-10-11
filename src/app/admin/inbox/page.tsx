@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { btnCls, btnGhostCls, inputCls, labelCls } from "@/components/admin/AdminShell";
+import { automationApi } from "@/lib/automation-client";
 import { autoThumbnail } from "@/lib/player";
 import { getBrowserClient } from "@/lib/supabase";
 import {
@@ -70,6 +71,8 @@ export default function AdminInbox() {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [reload, setReload] = useState(0);
+  const [robot, setRobot] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -84,7 +87,23 @@ export default function AdminInbox() {
     return () => {
       alive = false;
     };
-  }, [tab]);
+  }, [tab, reload]);
+
+  /** Run the YouTube robot now (GitHub Actions), then refresh the list when it's done. */
+  async function findNow() {
+    setRobot("Starting the robot…");
+    const res = await automationApi("POST", { action: "catalog", test: false });
+    if (!res.ok) {
+      setRobot(res.error ?? "Couldn't start the robot.");
+      return;
+    }
+    setRobot("Looking for new videos — this list refreshes in about a minute…");
+    setTimeout(() => {
+      setTab("pending");
+      setReload((n) => n + 1);
+      setRobot("Done — refreshed. (Run details: Admin → Automation.)");
+    }, 80_000);
+  }
 
   function patch(id: string, p: Partial<Draft>) {
     setDrafts((d) => ({ ...d, [id]: { ...d[id], ...p } }));
@@ -159,7 +178,10 @@ export default function AdminInbox() {
             era, then approve — it goes live instantly. Rejected videos are never suggested again.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <button onClick={findNow} disabled={robot?.startsWith("Looking") || robot?.startsWith("Starting")} className={btnCls}>
+            🔎 Find new videos now
+          </button>
           {(["pending", "rejected", "approved"] as Tab[]).map((t) => (
             <button
               key={t}
@@ -174,6 +196,7 @@ export default function AdminInbox() {
         </div>
       </div>
 
+      {robot && <p className="mt-6 rounded-md border border-line bg-surface p-3 text-sm">{robot}</p>}
       {error && <p className="mt-6 rounded-md border border-accent/40 bg-accent/10 p-3 text-sm">{error}</p>}
 
       {loaded && items.length === 0 && !error && (
