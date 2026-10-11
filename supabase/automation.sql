@@ -82,6 +82,20 @@ on conflict (id) do nothing;
 -- ------------------------------------------------------------
 -- 3. AUTOPILOT MEMORY — what was already posted lives in site_settings
 --    under the key "instagram_autopilot" (written by the GitHub Action
---    with the service_role key). Nothing to create: the row appears on the
---    first real post. To reset the memory, delete that row.
+--    with the service_role key). The row appears on the first real post;
+--    to reset the memory, delete that row. The table is created here too
+--    in case schema.sql's site_settings block was never run.
 -- ------------------------------------------------------------
+create table if not exists public.site_settings (
+  key   text primary key,
+  value jsonb not null default '{}'::jsonb
+);
+
+alter table public.site_settings enable row level security;
+
+drop policy if exists "public read site_settings" on public.site_settings;
+create policy "public read site_settings" on public.site_settings
+  for select using (true);
+drop policy if exists "admin write site_settings" on public.site_settings;
+create policy "admin write site_settings" on public.site_settings
+  for all to authenticated using (true) with check (true);
