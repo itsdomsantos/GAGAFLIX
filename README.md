@@ -211,7 +211,32 @@ manuais continuam em modo de teste, a não ser que desligues "Test run").
 2. Confirma o domínio (o Google dá-te um registo DNS para colar no teu registrar)
 3. Em **Sitemaps**, submete `sitemap.xml`. O Google passa a descobrir cada vídeo novo sozinho
 
-### 9. Logo
+### 9. Botões de automação no /admin (~5 min)
+
+Em **/admin/automation** tens botões para correr já o robô dos vídeos e para
+publicar já no Instagram (notícia, post extra, reel) — sem esperar pelo horário.
+O **Inbox** também tem o botão **🔎 Find new videos now**. Para os botões
+funcionarem, o site precisa de uma chave do GitHub (grátis):
+
+1. No GitHub, carrega na tua foto (canto superior direito) → **Settings**
+2. No fundo do menu da esquerda: **Developer settings** → **Personal access tokens**
+   → **Fine-grained tokens** → **Generate new token**
+3. Preenche:
+   - **Token name:** `gagaflix-admin-buttons`
+   - **Expiration:** `No expiration` se aparecer; senão o máximo (e põe um lembrete para a renovar)
+   - **Repository access:** **Only select repositories** → escolhe `GAGAFLIX`
+   - **Permissions → Repository permissions → Actions:** **Read and write**
+     (não mexas em mais nada)
+4. **Generate token** → copia a chave (só aparece uma vez). ⚠️ É secreta: não a
+   coles em ficheiros nem no chat.
+5. Na **Vercel**: projeto gagaflix → **Settings → Environment Variables** →
+   Key `GITHUB_DISPATCH_TOKEN` → Value: a chave → **Save**
+6. **Deployments** → no último deploy carrega nos **⋯** → **Redeploy**
+
+Pronto: abre `gagaflix.com/admin/automation` — vês os botões e as últimas
+execuções (a correr / ✓ / ✗), com link para o GitHub.
+
+### 10. Logo
 
 Adiciona os ficheiros do teu logo flame a `public/`:
 
