@@ -27,10 +27,10 @@ const JUNK = [
 
 const SIGNALS = [
   [/\b(announce[sd]?|announcement|release[sd]?|drops?|dropped|new (single|song|album|music|video|era|tour|look)|tour dates?|world tour|mayhem ball|stadium|setlist|perform(s|ed|ing|ance)?|premieres?|debut(s|ed)?|nominat\w*|wins?|won|awards?|grammys?|oscars?|emmys?|golden globes?|vmas?|hot 100|no\. ?1|number one|charts?|record-breaking|breaks? (a )?record|sold[- ]out|tickets?|headlin\w*|cast(s|ing)?|film|movie|series|documentary|trailer|collab\w*|duet|feat\.|remix|album|single|music video|concert|residency|views|streams|platinum|certified|milestone)\b/i, 3, "hard news"],
-  [/\b(welcomes?|gives birth|birth of|engaged|engagement|married|wedding)\b/i, 2, "life event"],
+  [/\b(welcomes?|gives birth|engaged|engagement|married|wedding)\b/i, 2, "life event"],
   [/\b(official(ly)?|confirm(s|ed)?|reveal(s|ed)?|unveil(s|ed)?)\b/i, 2, "confirmed"],
-  [/\b(rumou?r(s|ed)?|reportedly|allegedly|could|might|may be|fans? (think|believe|theori[sz]e)|theor(y|ies)|speculat\w*)\b/i, -3, "rumour"],
-  [/\b(reacts?|reactions?|memes?|viral|tiktok|trolls?|slams?|claps? back|shades?|feud|wardrobe malfunction|weight|body)\b/i, -2, "fluff"],
+  [/\b(rumou?r(s|ed)?|reportedly|allegedly|(exclusive )?sources? (say|says|claim|reveal)|exclusive source|insiders?|could|might|may be|fans? (think|believe|theori[sz]e)|theor(y|ies)|speculat\w*)\b/i, -3, "rumour"],
+  [/\b(how .{0,40} (is|was|has been) feeling|reacts?|reactions?|memes?|viral|tiktok|trolls?|slams?|claps? back|shades?|feud|wardrobe malfunction|weight|body)\b/i, -2, "fluff"],
   [/\b(here'?s why|why (i|we|you)|opinion|ranked|ranking|best .{0,20} songs|worst)\b/i, -2, "opinion"],
   [/\b(\d+ years ago|anniversary|throwback)\b/i, -1, "throwback"],
 ];

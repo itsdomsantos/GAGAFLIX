@@ -199,7 +199,8 @@ export async function freshNews(state, now = new Date()) {
   const rejected = [];
   for (const { source, entries } of feeds) {
     const fresh = entries.filter((e) => new Date(e.date).getTime() >= cutoff);
-    console.log(`  news: ${source.name} — ${entries.length} entries, ${fresh.length} from the last ${MAX_AGE_H} h`);
+    const newest = entries.map((e) => Date.parse(e.date)).filter(Number.isFinite).sort((a, b) => a - b).map((t) => new Date(t).toISOString()).at(-1);
+    console.log(`  news: ${source.name} — ${entries.length} entries, ${fresh.length} from the last ${MAX_AGE_H} h${newest ? ` (newest ${newest})` : ""}`);
     for (const e of entries) {
       let title = e.title;
       const outlet = source.aggregator ? e.outlet || source.name : source.name;
