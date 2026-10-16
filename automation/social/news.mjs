@@ -198,6 +198,8 @@ export async function freshNews(state, now = new Date()) {
   const all = [];
   const rejected = [];
   for (const { source, entries } of feeds) {
+    const fresh = entries.filter((e) => new Date(e.date).getTime() >= cutoff);
+    console.log(`  news: ${source.name} — ${entries.length} entries, ${fresh.length} from the last ${MAX_AGE_H} h`);
     for (const e of entries) {
       let title = e.title;
       const outlet = source.aggregator ? e.outlet || source.name : source.name;
