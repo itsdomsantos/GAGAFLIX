@@ -54,7 +54,7 @@ export async function renderSiteReel({ site, videos, eras, stats }, outDir, brow
   browser ??= await openBrowser();
   // ---- the site, on a phone (filmed in slow motion, see site-recorder.mjs) ----
   const rec0 = await createRecorder(browser, { site, viewport: PHONE, dpr: 2, mobile: true, slow: SLOW });
-  const { page, open, take, scrollTo, yFor, centre, centreInScroller } = rec0;
+  const { page, open, take, scrollTo, yFor, centre, eraTap, centreInScroller } = rec0;
 
   // ---- what the reel uses — picked from the catalogue ----
   const count = (slug) => videos.filter((v) => v.era_slug === slug).length;
@@ -98,13 +98,15 @@ export async function renderSiteReel({ site, videos, eras, stats }, outDir, brow
       const vt = (i / FPS) * 1000;
       const copy = [...copies].reverse().find((c) => c.at <= vt) ?? copies[0];
       const tap = rec.taps.find((tp) => vt >= tp.t - 180 && vt <= tp.t + 650);
+      const wipe = rec0.wipeAt(rec, vt, showEra?.accent ?? "#e04e20");
       const fadeOut = i > n - 5 ? (i - (n - 5)) / 5 : 0;
       await emit({
         accent: copy.accent,
-        phone: { src: `data:image/jpeg;base64,${rec0.frameAt(rec, vt, cursor)}`, enter: enterPhone ? clamp(i / 14) : 1 },
+        phone: { src: `data:image/jpeg;base64,${wipe?.hold ?? rec0.frameAt(rec, vt, cursor)}`, enter: enterPhone ? clamp(i / 14) : 1 },
         tap: tap ? { x: tap.x, y: tap.y, p: (vt - (tap.t - 180)) / 830 } : null,
         copy: { k: copy.k, t: copy.t, s: copy.s, a: Math.min(clamp((vt - copy.at) / 250), 1 - fadeOut), rise: clamp((vt - copy.at) / 400) },
         flash: i < 4 ? 0.3 * (1 - i / 4) : 0,
+        wipe,
       });
     }
   }
@@ -147,7 +149,7 @@ export async function renderSiteReel({ site, videos, eras, stats }, outDir, brow
       await centreInScroller(target, 1000);
       await at(3050);
       mark("era");
-      await tap((await centre(target)) ?? (await centre(CIRCLE, "middle")));
+      await eraTap(tap, (await centre(target)) ?? (await centre(CIRCLE, "middle")));
       await at(4800);
       const y2 = await yFor(eraCards, 0.5);
       if (y2 != null) await scrollTo(y2, 1300);

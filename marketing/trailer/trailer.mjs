@@ -137,7 +137,7 @@ async function main() {
 
   /* ---------- 1 · film the site (all takes first, then compose) ---------- */
   const rec = await createRecorder(browser, { site: SITE, viewport: { width: 1440, height: 900 }, dpr: DPR === 2 ? 2 : 1.4, slow: SLOW, quality: 84 });
-  const { page, open, take, scrollTo, yFor, centre, control, centreInScroller } = rec;
+  const { page, open, take, scrollTo, yFor, centre, control, eraTap, centreInScroller } = rec;
   const takes = []; // { from (s), rec, accentAt(vt) }
   const CIRCLE = 'a[aria-label$=" era"]';
   const eraLink = `a[aria-label="${showEra?.name} era"]`;
@@ -156,7 +156,7 @@ async function main() {
       if (y != null) await scrollTo(y, 900);
       await centreInScroller(eraLink, 900);
       await at(eStart + 2000);
-      await tap((await centre(eraLink)) ?? (await centre(CIRCLE, "middle")));
+      await eraTap(tap, (await centre(eraLink)) ?? (await centre(CIRCLE, "middle")));
       await at(eStart + 3500);
       const y2 = await yFor(eraCards, 0.55);
       if (y2 != null) await scrollTo(y2, 900);
@@ -315,7 +315,8 @@ async function main() {
       const vt = (t - (tk?.from ?? CUTS[fi])) * 1000;
       if (!cursors.has(tk)) cursors.set(tk, { i: 0 });
       const cur = cursors.get(tk);
-      const src = tk ? `data:image/jpeg;base64,${rec.frameAt(tk.rec, vt, cur)}` : null;
+      const wipe = tk ? rec.wipeAt(tk.rec, vt, showEra?.accent ?? HOME) : null;
+      const src = tk ? `data:image/jpeg;base64,${wipe?.hold ?? rec.frameAt(tk.rec, vt, cur)}` : null;
       const tap = tk?.rec.taps.find((tp) => vt >= tp.t - 200 && vt <= tp.t + 700);
       const [k, title, sub] = FEATURE_COPY[key];
       const sinceCut = t - CUTS[fi];
@@ -333,6 +334,7 @@ async function main() {
           flash: sinceCut < 0.16 ? 0.45 * (1 - sinceCut / 0.16) : 0,
           beam: Math.sin(t * 0.4),
           tap: tap ? { x: tap.x, y: tap.y, p: (vt - (tap.t - 200)) / 900 } : null,
+          wipe,
         },
       });
       continue;

@@ -2,11 +2,10 @@
  * Films the real GAGAFLIX site while a script uses it — shared by the Instagram reel
  * (phone) and the YouTube trailer (desktop).
  *
- * Slow motion: while filming, the site runs `slow`× slower — its clock and timers and every
- * element.animate() via an init script, CSS animations/transitions via the DevTools
- * Animation domain (each one re-timed as it starts) — so back-to-back sharp screenshots
- * become smooth footage. (Not Chromium's global animation playback rate: with it, the
- * site's era transition left its colour strips stuck over the page.)
+ * Slow motion: while filming, the site runs `slow`× slower — its clock and timers via an
+ * init script, CSS animations/transitions via the DevTools Animation domain (each one
+ * re-timed as it starts) — so back-to-back sharp screenshots become smooth footage.
+ * The era transition's colour strips are the exception: see eraTap().
  * Every time given to a script is in VIDEO ms.
  *
  * Local previews without YouTube access: REEL_MOCK_IMAGES=1 swaps YouTube thumbnails for
@@ -116,12 +115,6 @@ export async function createRecorder(browser, { site, viewport, dpr = 2, mobile 
     const si = window.setInterval.bind(window);
     window.setTimeout = (fn, ms = 0, ...a) => st(fn, ms * k, ...a);
     window.setInterval = (fn, ms = 0, ...a) => si(fn, ms * k, ...a);
-    // Web Animations (the era transition strips…): stretch duration and delay.
-    const animate = Element.prototype.animate;
-    Element.prototype.animate = function (keyframes, opts) {
-      const o = typeof opts === "number" ? { duration: opts * k } : { ...opts, duration: (opts?.duration ?? 0) * k, delay: (opts?.delay ?? 0) * k };
-      return animate.call(this, keyframes, o);
-    };
   }, SLOW);
   // no analytics hits from the robot
   await ctx.route("**/api/track**", (r) => r.fulfill({ status: 204, body: "" }));
@@ -134,7 +127,7 @@ export async function createRecorder(browser, { site, viewport, dpr = 2, mobile 
   }
   const page = await ctx.newPage();
   const cdp = await ctx.newCDPSession(page);
-  /** CSS animations & transitions: re-time each one as it starts (Web Animations are patched in-page). */
+  /** CSS animations & transitions: re-time each one as it starts. */
   let cssSlowed = false;
   const slowAnimations = async () => {
     if (SLOW <= 1) return;
@@ -207,6 +200,18 @@ export async function createRecorder(browser, { site, viewport, dpr = 2, mobile 
       },
       [sel, pick],
     );
+  /**
+   * Tap an era link with the site's strip transition turned off (reduced motion): the
+   * page changes and re-colours instantly, and the video draws the strips itself
+   * (smooth at any speed — filmed in slow motion, the real ones got out of sync).
+   */
+  const eraTap = async (tap, pt) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    const ok = await tap(pt, "era");
+    await page.waitForTimeout(400);
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    return ok;
+  };
   /** Centre of a fixed control (floating buttons sit near the screen edge, so no margin rules). */
   const control = (sel) =>
     page.evaluate((s) => {
@@ -249,9 +254,9 @@ export async function createRecorder(browser, { site, viewport, dpr = 2, mobile 
     const marks = {};
     const t0 = Date.now();
     const at = (videoMs) => sleepUntil(t0, videoMs);
-    const tap = async (pt) => {
+    const tap = async (pt, kind = "tap") => {
       if (!pt) return false;
-      taps.push({ t: (Date.now() - t0) / SLOW, x: pt.x, y: pt.y });
+      taps.push({ t: (Date.now() - t0) / SLOW, x: pt.x, y: pt.y, kind });
       await page.mouse.click(pt.x, pt.y);
       return true;
     };
@@ -285,5 +290,19 @@ export async function createRecorder(browser, { site, viewport, dpr = 2, mobile 
     return rec.frames[state.i].data;
   };
 
-  return { page, open, take, scrollTo, yFor, centre, control, centreInScroller, frameAt, slow: SLOW, close: () => ctx.close() };
+  /** The last frame recorded at or before `vt` (used to hold the old page while the strips cover it). */
+  const frameBefore = (rec, vt) => {
+    let f = rec.frames[0];
+    for (const x of rec.frames) {
+      if (x.t > vt) break;
+      f = x;
+    }
+    return f.data;
+  };
+  /** Wipe state for the compositor at video time vt (ms since take start), or null. */
+  const wipeAt = (rec, vt, color) => {
+    const tp = rec.taps.find((x) => x.kind === "era" && vt >= x.t && vt <= x.t + 1600);
+    return tp ? { ms: vt - tp.t, color, hold: vt - tp.t < 632 ? frameBefore(rec, tp.t - 1) : null } : null;
+  };
+  return { frameBefore, wipeAt, page, open, take, scrollTo, yFor, centre, control, eraTap, centreInScroller, frameAt, slow: SLOW, close: () => ctx.close() };
 }

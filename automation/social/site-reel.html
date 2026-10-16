@@ -77,7 +77,7 @@
   <div class="fill glow" id="glow"></div>
   <div id="brandTop"><span class="w wordmark">GAGAFLIX</span><span class="u">gagaflix.com</span></div>
   <div id="copy"><div class="kicker" id="k"></div><div class="t cond" id="t"></div><div class="s" id="s"></div></div>
-  <div id="phone"><div id="screen"><img id="shot" /><div id="island"></div><div id="tap"></div><div id="flash"></div></div></div>
+  <div id="phone"><div id="screen"><img id="shot" /><div id="island"></div><div id="wipe" style="position:absolute;inset:0;z-index:2;pointer-events:none;display:none"></div><div id="tap"></div><div id="flash"></div></div></div>
 
   <div id="hook">
     <img id="hookImg" />
@@ -103,7 +103,27 @@
 const $ = (id) => document.getElementById(id);
 const clamp = (x) => Math.min(1, Math.max(0, x));
 const ease = (x) => 1 - (1 - clamp(x)) ** 3;
-const SCREEN = { w: 300, h: 664 }; // the phone's screen in CSS px; site viewport is 390 wide
+const SCREEN = { w: 300, h: 664 };
+/** The site's era transition, redrawn by the video: 9 strips in the era colour (even ones from
+ *  the top, odd from the bottom) cover the screen, hold, then pull away. ms = time since the tap. */
+const WIPE = { C: 9, ST: 34, D: 360, HOLD: 260 };
+WIPE.COVER = (WIPE.C - 1) * WIPE.ST + WIPE.D;
+WIPE.TOTAL = WIPE.COVER * 2 + WIPE.HOLD;
+const inOut = (x) => { const t = clamp(x); return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2; };
+function drawWipe(el, ms, color) {
+  const on = ms != null && ms >= 0 && ms <= WIPE.TOTAL;
+  el.style.display = on ? "flex" : "none";
+  if (!on) return;
+  if (!el.children.length) el.innerHTML = Array.from({ length: WIPE.C }, () => '<i style="flex:1;height:100%;display:block"></i>').join("");
+  [...el.children].forEach((s, i) => {
+    let off; // 0 = covering, 1 = out of view
+    if (ms < WIPE.COVER + WIPE.HOLD) off = 1 - inOut((ms - i * WIPE.ST) / WIPE.D);
+    else off = inOut((ms - WIPE.COVER - WIPE.HOLD - (WIPE.C - 1 - i) * WIPE.ST) / WIPE.D);
+    s.style.background = color;
+    s.style.transform = `translateY(${(i % 2 ? 101 : -101) * off}%)`;
+  });
+}
+ // the phone's screen in CSS px; site viewport is 390 wide
 const shown = {};
 const setSrc = (id, src) => { if (src && shown[id] !== src) { $(id).src = shown[id] = src; } };
 
@@ -129,6 +149,7 @@ window.set = (st) => {
     $("phone").style.transform = `translateY(${(1 - e) * 720}px) rotate(${(1 - e) * -6}deg)`;
   }
   $("flash").style.opacity = st.flash || 0;
+  drawWipe($("wipe"), st.wipe?.ms, st.wipe?.color);
 
   if (st.tap) {
     const k = SCREEN.w / 390;

@@ -102,7 +102,7 @@
     <div id="copy"><div id="k"></div><div id="t" class="cond"></div><div id="s"></div></div>
     <div id="win">
       <div id="winBar"><i></i><i></i><i></i><div id="winUrl">gagaflix.com</div></div>
-      <div style="position: relative"><img id="shot" /><div id="tap"></div></div>
+      <div style="position: relative; overflow: hidden"><img id="shot" /><div id="wipe" style="position:absolute;inset:0;z-index:2;pointer-events:none;display:none"></div><div id="tap"></div></div>
     </div>
     <div class="fill" id="stageFlash"></div>
     <div class="grain"></div>
@@ -127,6 +127,26 @@ const ease = (x) => 1 - (1 - clamp(x)) ** 3;
 const shown = {};
 const setSrc = (id, src) => { if (src && shown[id] !== src) $(id).src = shown[id] = src; };
 const setText = (id, t) => { if ($(id).textContent !== t) $(id).textContent = t; };
+/** The site's era transition, redrawn by the video: 9 strips in the era colour (even ones from
+ *  the top, odd from the bottom) cover the screen, hold, then pull away. ms = time since the tap. */
+const WIPE = { C: 9, ST: 34, D: 360, HOLD: 260 };
+WIPE.COVER = (WIPE.C - 1) * WIPE.ST + WIPE.D;
+WIPE.TOTAL = WIPE.COVER * 2 + WIPE.HOLD;
+const inOut = (x) => { const t = clamp(x); return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2; };
+function drawWipe(el, ms, color) {
+  const on = ms != null && ms >= 0 && ms <= WIPE.TOTAL;
+  el.style.display = on ? "flex" : "none";
+  if (!on) return;
+  if (!el.children.length) el.innerHTML = Array.from({ length: WIPE.C }, () => '<i style="flex:1;height:100%;display:block"></i>').join("");
+  [...el.children].forEach((s, i) => {
+    let off; // 0 = covering, 1 = out of view
+    if (ms < WIPE.COVER + WIPE.HOLD) off = 1 - inOut((ms - i * WIPE.ST) / WIPE.D);
+    else off = inOut((ms - WIPE.COVER - WIPE.HOLD - (WIPE.C - 1 - i) * WIPE.ST) / WIPE.D);
+    s.style.background = color;
+    s.style.transform = `translateY(${(i % 2 ? 101 : -101) * off}%)`;
+  });
+}
+
 
 window.setup = ({ collage = [] }) => {
   $("collage").innerHTML = collage.slice(0, 15).map((s) => `<img src="${s}">`).join("");
@@ -183,6 +203,7 @@ window.set = (st) => {
     $("copy").style.opacity = s.copy ?? 1;
     $("copy").style.transform = `translateY(calc(-50% + ${(1 - ease(s.copy ?? 1)) * 30}px))`;
     $("stageFlash").style.opacity = s.flash || 0;
+    drawWipe($("wipe"), s.wipe?.ms, s.wipe?.color);
     if (s.tap) {
       const k = 1240 / 1440;
       const p = s.tap.p;
