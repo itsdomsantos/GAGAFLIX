@@ -29,7 +29,8 @@
   #filmFlash { background: #fff; mix-blend-mode: overlay; opacity: 0; }
   #filmTint { background: radial-gradient(70% 60% at 50% 60%, color-mix(in srgb, var(--a) 25%, transparent), transparent 70%); mix-blend-mode: screen; }
   #card { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); text-align: center; z-index: 6; }
-  #card .big { font-size: 190px; text-shadow: 0 10px 60px rgba(0,0,0,.6); }
+  #card .big { font-size: 190px; filter: drop-shadow(0 6px 30px rgba(0,0,0,.85)); }
+  #card .sub { text-shadow: 0 2px 18px rgba(0,0,0,.9); }
   #card .sub { margin-top: 26px; font-size: 26px; font-weight: 800; letter-spacing: .6em; text-transform: uppercase; color: #d9d9e0; }
 
   /* ---- logo ---- */
@@ -80,6 +81,7 @@
   <div class="layer bars" id="film">
     <img id="filmImg" />
     <div class="fill" id="filmTint"></div>
+    <div class="fill" id="filmDim" style="background:#000; opacity:0"></div>
     <div class="fill vignette"></div>
     <div class="fill" id="filmFlash"></div>
     <div id="card"><div class="big cond chrome" id="cardBig"></div><div class="sub" id="cardSub"></div></div>
@@ -149,6 +151,7 @@ window.set = (st) => {
     $("filmFlash").style.opacity = f.flash || 0;
     const c = f.card;
     $("card").style.opacity = c ? c.p : 0;
+    $("filmDim").style.opacity = c ? 0.5 * c.p : 0; // darken the footage behind a title card
     if (c) {
       setText("cardBig", c.big);
       setText("cardSub", c.sub || "");

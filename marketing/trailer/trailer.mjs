@@ -137,7 +137,7 @@ async function main() {
 
   /* ---------- 1 · film the site (all takes first, then compose) ---------- */
   const rec = await createRecorder(browser, { site: SITE, viewport: { width: 1440, height: 900 }, dpr: DPR === 2 ? 2 : 1.4, slow: SLOW, quality: 84 });
-  const { page, open, take, scrollTo, yFor, centre, centreInScroller } = rec;
+  const { page, open, take, scrollTo, yFor, centre, control, centreInScroller } = rec;
   const takes = []; // { from (s), rec, accentAt(vt) }
   const CIRCLE = 'a[aria-label$=" era"]';
   const eraLink = `a[aria-label="${showEra?.name} era"]`;
@@ -205,14 +205,14 @@ async function main() {
   if (await open(`/eras/${showEra?.slug ?? ""}`)) {
     const r = await take(ms("music"), async ({ at, tap }) => {
       await at(400);
-      await tap(await centre('button[aria-label="Open music"]'));
+      await tap(await control('button[aria-label="Open music"]'));
     });
     takes.push({ from: start("music"), rec: r, accent: () => showEra?.accent ?? HOME });
   }
   if (await open("/")) {
     const r = await take(ms("chat"), async ({ at, tap }) => {
       await at(300);
-      await tap(await centre('button[aria-label="Open chat"]'));
+      await tap(await control('button[aria-label="Open chat"]'));
       await at(1300);
       await page.locator('input[placeholder^="Ask"]').first().click().catch(() => {});
       await page.keyboard.type("Recommend an iconic live performance", { delay: 45 * SLOW });

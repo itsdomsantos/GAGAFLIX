@@ -2,9 +2,11 @@
  * Films the real GAGAFLIX site while a script uses it — shared by the Instagram reel
  * (phone) and the YouTube trailer (desktop).
  *
- * Slow motion: while filming, the site runs `slow`× slower (its clock and timers via an
- * init script, CSS/WAAPI animations and the animation-frame timeline via Chromium's
- * animation playback rate), so back-to-back sharp screenshots become smooth footage.
+ * Slow motion: while filming, the site runs `slow`× slower — its clock and timers and every
+ * element.animate() via an init script, CSS animations/transitions via the DevTools
+ * Animation domain (each one re-timed as it starts) — so back-to-back sharp screenshots
+ * become smooth footage. (Not Chromium's global animation playback rate: with it, the
+ * site's era transition left its colour strips stuck over the page.)
  * Every time given to a script is in VIDEO ms.
  *
  * Local previews without YouTube access: REEL_MOCK_IMAGES=1 swaps YouTube thumbnails for
@@ -114,8 +116,12 @@ export async function createRecorder(browser, { site, viewport, dpr = 2, mobile 
     const si = window.setInterval.bind(window);
     window.setTimeout = (fn, ms = 0, ...a) => st(fn, ms * k, ...a);
     window.setInterval = (fn, ms = 0, ...a) => si(fn, ms * k, ...a);
-    // requestAnimationFrame is left alone: Chromium's animation playback rate (below)
-    // already slows the animation-frame timeline, so scaling it here would slow it twice.
+    // Web Animations (the era transition strips…): stretch duration and delay.
+    const animate = Element.prototype.animate;
+    Element.prototype.animate = function (keyframes, opts) {
+      const o = typeof opts === "number" ? { duration: opts * k } : { ...opts, duration: (opts?.duration ?? 0) * k, delay: (opts?.delay ?? 0) * k };
+      return animate.call(this, keyframes, o);
+    };
   }, SLOW);
   // no analytics hits from the robot
   await ctx.route("**/api/track**", (r) => r.fulfill({ status: 204, body: "" }));
@@ -128,13 +134,21 @@ export async function createRecorder(browser, { site, viewport, dpr = 2, mobile 
   }
   const page = await ctx.newPage();
   const cdp = await ctx.newCDPSession(page);
-  /** CSS transitions/animations, element.animate() and animation frames — slowed to match the clock. */
+  /** CSS animations & transitions: re-time each one as it starts (Web Animations are patched in-page). */
+  let cssSlowed = false;
   const slowAnimations = async () => {
+    if (SLOW <= 1) return;
     try {
       await cdp.send("Animation.enable");
-      await cdp.send("Animation.setPlaybackRate", { playbackRate: 1 / SLOW });
+      if (!cssSlowed) {
+        cssSlowed = true;
+        cdp.on("Animation.animationStarted", ({ animation: a }) => {
+          if (a.type === "WebAnimation" || !a.source) return;
+          cdp.send("Animation.setTiming", { animationId: a.id, duration: a.source.duration * SLOW, delay: a.source.delay * SLOW }).catch(() => {});
+        });
+      }
     } catch {
-      /* not fatal: animations just play at normal speed */
+      /* not fatal: CSS animations just play at normal speed */
     }
   };
 
@@ -193,6 +207,14 @@ export async function createRecorder(browser, { site, viewport, dpr = 2, mobile 
       },
       [sel, pick],
     );
+  /** Centre of a fixed control (floating buttons sit near the screen edge, so no margin rules). */
+  const control = (sel) =>
+    page.evaluate((s) => {
+      const el = [...document.querySelectorAll(s)].find((e) => e.getBoundingClientRect().width > 4);
+      if (!el) return null;
+      const r = el.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    }, sel);
   /** Animate a horizontal scroller so `sel` sits in its middle (`ms` in video ms). */
   const centreInScroller = (sel, ms = 1000) =>
     page.evaluate(
@@ -263,5 +285,5 @@ export async function createRecorder(browser, { site, viewport, dpr = 2, mobile 
     return rec.frames[state.i].data;
   };
 
-  return { page, open, take, scrollTo, yFor, centre, centreInScroller, frameAt, slow: SLOW, close: () => ctx.close() };
+  return { page, open, take, scrollTo, yFor, centre, control, centreInScroller, frameAt, slow: SLOW, close: () => ctx.close() };
 }
