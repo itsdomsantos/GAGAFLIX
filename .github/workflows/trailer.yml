@@ -5,10 +5,6 @@ name: YouTube trailer
 # Run it by hand (Actions → YouTube trailer → Run workflow) or from /admin/automation.
 # Your intro compilation: commit it as marketing/trailer/intro.mp4 (it plays muted).
 on:
-  # TEMPORARY: lets the trailer render from this branch before it is merged (removed right after)
-  push:
-    branches: [claude/youtube-trailer]
-    paths: [.github/workflows/trailer.yml]
   workflow_dispatch:
     inputs:
       resolution:
