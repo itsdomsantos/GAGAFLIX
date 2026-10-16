@@ -245,13 +245,13 @@ export async function createRecorder(browser, { site, viewport, dpr = 2, mobile 
       const t = (Date.now() - t0) / SLOW;
       try {
         const buf = await page.screenshot({ type: "jpeg", quality });
-        frames.push({ t, data: buf.toString("base64") });
+        frames.push({ t, data: buf.toString("base64"), url: page.url() });
       } catch {
         await new Promise((r) => setTimeout(r, 30)); // mid-navigation: try again
       }
     }
     await driving;
-    if (!frames.length) frames.push({ t: 0, data: (await page.screenshot({ type: "jpeg", quality })).toString("base64") });
+    if (!frames.length) frames.push({ t: 0, data: (await page.screenshot({ type: "jpeg", quality })).toString("base64"), url: page.url() });
     if (process.env.REEL_DEBUG) console.log("  [debug]", page.url(), frames.length, "frames", JSON.stringify(taps));
     return { frames, taps, marks, ms };
   }
@@ -259,6 +259,7 @@ export async function createRecorder(browser, { site, viewport, dpr = 2, mobile 
   /** The recorded frame to show at video time `vt` (ms). Keeps an index for speed. */
   const frameAt = (rec, vt, state = { i: 0 }) => {
     while (state.i + 1 < rec.frames.length && rec.frames[state.i + 1].t <= vt) state.i++;
+    state.url = rec.frames[state.i].url;
     return rec.frames[state.i].data;
   };
 
