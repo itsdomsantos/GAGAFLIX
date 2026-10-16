@@ -209,6 +209,13 @@ excluir, mínimo de visualizações, máximo por dia, canais bloqueados).
 Enquanto não ligares o Instagram, as 3 execuções diárias fazem o mesmo:
 desenham os posts e guardam-nos como artefacto, sem publicar.
 
+**Vídeo de abertura do reel (opcional):** o reel abre com fotos da Gaga das
+várias eras e "LADY GAGA" em grande. Para usares um vídeo teu por baixo desse
+texto, põe um clip **vertical (9:16), 2–4 s, MP4** no repositório em
+`automation/social/reel-intro.mp4` (GitHub → Add file → Upload files). Usa só
+vídeo que possas usar (teu, ou de fã com autorização) — clips oficiais podem
+fazer o Instagram silenciar ou retirar o reel.
+
 Opcional — usar a foto do próprio artigo nas notícias (em vez de uma foto do
 catálogo): **Settings → Secrets and variables → Actions → separador Variables
 → New repository variable** → Name `NEWS_ARTICLE_IMAGES`, Value `1`. A legenda
