@@ -101,7 +101,7 @@ export async function renderSiteReel({ site, videos, eras, stats }, outDir, brow
       localStorage.setItem("gf-a2hs-seen", "1");
     } catch {}
   });
-  // the slow clock: page time, timers and animation frames all run SLOW× slower
+  // the slow clock: page time and timers run SLOW× slower
   await ctx.addInitScript((k) => {
     if (k <= 1) return;
     const realNow = performance.now.bind(performance);
@@ -114,8 +114,8 @@ export async function renderSiteReel({ site, videos, eras, stats }, outDir, brow
     const si = window.setInterval.bind(window);
     window.setTimeout = (fn, ms = 0, ...a) => st(fn, ms * k, ...a);
     window.setInterval = (fn, ms = 0, ...a) => si(fn, ms * k, ...a);
-    const raf = window.requestAnimationFrame.bind(window);
-    window.requestAnimationFrame = (cb) => raf((t) => cb(p0 + (t - p0) / k));
+    // requestAnimationFrame is left alone: Chromium's animation playback rate (below)
+    // already slows the animation-frame timeline, so scaling it here would slow it twice.
   }, SLOW);
   await ctx.route("**/api/track**", (r) => r.fulfill({ status: 204, body: "" }));
   if (process.env.REEL_MOCK_IMAGES === "1") {
@@ -155,8 +155,8 @@ export async function renderSiteReel({ site, videos, eras, stats }, outDir, brow
         new Promise((done) => {
           const from = scrollY;
           const s = performance.now();
-          const step = (n) => {
-            const p = Math.min(1, (n - s) / dur);
+          const step = () => {
+            const p = Math.min(1, (performance.now() - s) / dur);
             const e = p < 0.5 ? 4 * p * p * p : 1 - (-2 * p + 2) ** 3 / 2;
             scrollTo(0, from + (to - from) * e);
             if (p < 1) requestAnimationFrame(step);
@@ -325,8 +325,8 @@ export async function renderSiteReel({ site, videos, eras, stats }, outDir, brow
             const from = box.scrollLeft;
             const to = Math.max(0, link.offsetLeft - (box.clientWidth - link.offsetWidth) / 2);
             const s = performance.now();
-            const step = (n) => {
-              const p = Math.min(1, (n - s) / 1000);
+            const step = () => {
+              const p = Math.min(1, (performance.now() - s) / 1000);
               box.scrollLeft = from + (to - from) * (p < 0.5 ? 4 * p * p * p : 1 - (-2 * p + 2) ** 3 / 2);
               if (p < 1) requestAnimationFrame(step);
               else done();
