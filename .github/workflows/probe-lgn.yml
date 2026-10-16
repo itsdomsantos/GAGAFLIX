@@ -1,0 +1,16 @@
+name: probe-lgn
+on: push
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          UA="Mozilla/5.0 (compatible; GAGAFLIX-bot/1.0; +https://gagaflix.com)"
+          for u in https://ladygaganow.net/news/feed/ https://ladygaganow.net/feed/ "https://ladygaganow.net/news/?rss=1"; do
+            echo "=== $u"; curl -sSL -A "$UA" -o f.xml -w "%{http_code} %{content_type} %{url_effective}\n" "$u"; head -c 300 f.xml; echo
+            grep -oE "<(pubDate|updated|published)>[^<]+" f.xml | head -3; grep -oE "<title>[^<]{0,90}" f.xml | head -4
+          done
+          echo "=== page"; curl -sSL -A "$UA" https://ladygaganow.net/news/ -o p.html -w "%{http_code}\n"
+          grep -oE 'href="[^"]*news/[^"]+"' p.html | sort -u | head -25
+          grep -oiE '(datetime|data-date|content)="20[0-9-]{8}[^"]*"' p.html | head -10
+          grep -oiE '<link[^>]+(rss|atom)[^>]+>' p.html | head
