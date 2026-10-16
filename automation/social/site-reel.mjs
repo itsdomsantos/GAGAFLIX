@@ -28,7 +28,14 @@ const PHONE = { width: 390, height: 844 };
 const FFMPEG = process.env.FFMPEG_PATH || "ffmpeg";
 
 const clamp = (x) => Math.min(1, Math.max(0, x));
-const sleepUntil = (t0, ms) => new Promise((r) => setTimeout(r, Math.max(0, t0 + ms - Date.now())));
+/**
+ * Slow motion: while filming, the site runs SLOW× slower (its clock, timers, animation
+ * frames and CSS/WAAPI animations), so the ~12 sharp captures per real second become
+ * ~36 per second of video — smooth at 30 fps. Every time in the scripts below is in
+ * video ms; sleepUntil converts it to real time.
+ */
+const SLOW = Math.max(1, Number(process.env.REEL_SLOWMO || 3));
+const sleepUntil = (t0, ms) => new Promise((r) => setTimeout(r, Math.max(0, t0 + ms * SLOW - Date.now())));
 
 function encoder(file) {
   const ff = spawn(
@@ -94,6 +101,22 @@ export async function renderSiteReel({ site, videos, eras, stats }, outDir, brow
       localStorage.setItem("gf-a2hs-seen", "1");
     } catch {}
   });
+  // the slow clock: page time, timers and animation frames all run SLOW× slower
+  await ctx.addInitScript((k) => {
+    if (k <= 1) return;
+    const realNow = performance.now.bind(performance);
+    const realDate = Date.now;
+    const p0 = realNow();
+    const d0 = realDate();
+    performance.now = () => p0 + (realNow() - p0) / k;
+    Date.now = () => d0 + (realDate() - d0) / k;
+    const st = window.setTimeout.bind(window);
+    const si = window.setInterval.bind(window);
+    window.setTimeout = (fn, ms = 0, ...a) => st(fn, ms * k, ...a);
+    window.setInterval = (fn, ms = 0, ...a) => si(fn, ms * k, ...a);
+    const raf = window.requestAnimationFrame.bind(window);
+    window.requestAnimationFrame = (cb) => raf((t) => cb(p0 + (t - p0) / k));
+  }, SLOW);
   await ctx.route("**/api/track**", (r) => r.fulfill({ status: 204, body: "" }));
   if (process.env.REEL_MOCK_IMAGES === "1") {
     const art = readdirSync(join(ROOT, "public/eras")).filter((f) => f.endsWith(".png"));
@@ -103,6 +126,16 @@ export async function renderSiteReel({ site, videos, eras, stats }, outDir, brow
     );
   }
   const page = await ctx.newPage();
+  const cdp = await ctx.newCDPSession(page);
+  /** CSS transitions/animations and element.animate() — slowed to match the slow clock. */
+  const slowAnimations = async () => {
+    try {
+      await cdp.send("Animation.enable");
+      await cdp.send("Animation.setPlaybackRate", { playbackRate: 1 / SLOW });
+    } catch {
+      /* not fatal: animations just play at normal speed */
+    }
+  };
 
   const open = async (path) => {
     try {
@@ -158,24 +191,25 @@ export async function renderSiteReel({ site, videos, eras, stats }, outDir, brow
     );
 
   /**
-   * Record `ms` of the live page while `script(t0, tap, mark)` drives it in real time:
-   * sharp full-resolution captures back to back (~13 fps), so animations (the era
-   * transition, carousels, typing) are filmed as they really play.
+   * Record `ms` (video ms) of the live page while `script(t0, tap, mark)` drives it, in
+   * slow motion: sharp full-resolution captures back to back, timestamps divided by SLOW,
+   * so animations (the era transition, carousels, typing) come out smooth at 30 fps.
    * Returns { frames: [{t, data}], taps: [{t, x, y}], marks, ms }.
    */
   async function take(ms, script) {
     await page.bringToFront(); // a background tab gets its timers & animations throttled
+    await slowAnimations();
     const frames = [];
     const taps = [];
     const marks = {};
     const t0 = Date.now();
     const tap = async (pt) => {
       if (!pt) return false;
-      taps.push({ t: Date.now() - t0, x: pt.x, y: pt.y });
+      taps.push({ t: (Date.now() - t0) / SLOW, x: pt.x, y: pt.y });
       await page.mouse.click(pt.x, pt.y);
       return true;
     };
-    const mark = (name) => (marks[name] = Date.now() - t0);
+    const mark = (name) => (marks[name] = (Date.now() - t0) / SLOW);
     const driving = (async () => {
       try {
         await script?.(t0, tap, mark);
@@ -183,8 +217,8 @@ export async function renderSiteReel({ site, videos, eras, stats }, outDir, brow
         console.warn(`  reel: a step failed (${err.message.split("\n")[0]}) — keeping what was filmed`);
       }
     })();
-    while (Date.now() - t0 < ms) {
-      const at = Date.now() - t0;
+    while (Date.now() - t0 < ms * SLOW) {
+      const at = (Date.now() - t0) / SLOW;
       try {
         const buf = await page.screenshot({ type: "jpeg", quality: 82 });
         frames.push({ t: at, data: buf.toString("base64") });
@@ -353,7 +387,7 @@ export async function renderSiteReel({ site, videos, eras, stats }, outDir, brow
       await sleepUntil(t0, 250);
       await tap(await centre("input"));
       await sleepUntil(t0, 600);
-      await page.keyboard.type(query, { delay: 85 });
+      await page.keyboard.type(query, { delay: 85 * SLOW });
     });
     await play(rec, [{ at: 0, k: "06 · Search", t: "Find anything in a second.", s: "Songs, shows, interviews — just start typing.", accent: HOME }]);
   }
