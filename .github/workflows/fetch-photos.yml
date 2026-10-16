@@ -1,0 +1,47 @@
+name: Fetch Mayhem Ball photos (temporary)
+
+# One-off helper: downloads freely licensed Lady Gaga photos from Wikimedia Commons
+# (with their author/licence) into photos/ on this branch. Delete the branch afterwards.
+on:
+  push:
+    branches: [claude/fetch-photos]
+    paths: [.github/workflows/fetch-photos.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download from Wikimedia Commons
+        run: |
+          mkdir -p photos
+          UA="GAGAFLIX-fan-site/1.0 (https://gagaflix.com)"
+          while read -r f; do
+            [ -z "$f" ] && continue
+            enc=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))" "$f")
+            curl -sSfL -A "$UA" "https://commons.wikimedia.org/wiki/Special:FilePath/${enc}?width=1600" -o "photos/${f// /_}" || echo "failed: $f"
+            curl -sSf -A "$UA" "https://commons.wikimedia.org/w/api.php?action=query&format=json&prop=imageinfo&iiprop=extmetadata|size&titles=File:${enc}" -o "photos/${f// /_}.json" || true
+            sleep 1
+          done <<'LIST'
+          Lady_Gaga_-_Paparazzi_at_The_Mayhem_Ball_in_London.jpg
+          Lady_Gaga_performs_Million_Reasons_at_The_Mayhem_Ball.jpeg
+          Lady_Gaga_performs_Paparazzi_at_The_Mayhem_Ball.jpeg
+          Lady_Gaga_-_Bad_Romance_at_The_Mayhem_Ball_in_London.jpg
+          Lady_Gaga_-_Poker_Face_at_The_Mayhem_Ball.jpg
+          The_Mayhem_Ball_at_T-Mobile_Arena_07.jpg
+          Mayhem_Ball_-_Garden_of_Eden_(Las_Vegas).jpg
+          Mayhem_Ball_-_Die_with_a_Smile_(Las_Vegas)_cropped.jpg
+          Lady_Gaga_performs_LoveGame_at_The_Mayhem_Ball.jpg
+          Lady_Gaga_-_Scheiße_-_Mayhem_Ball_(LA)_2.jpg
+          LIST
+          ls -la photos
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add photos
+          git commit -m "Fetched Mayhem Ball photos from Wikimedia Commons" || echo "nothing new"
+          git push
