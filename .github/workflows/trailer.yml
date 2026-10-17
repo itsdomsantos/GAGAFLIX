@@ -1,0 +1,51 @@
+name: YouTube trailer
+
+# Renders the 60 s cinematic GAGAFLIX trailer (4K, 24 fps, original score) by filming the
+# live site, then attaches it to the run: open the run → "Artifacts" → gagaflix-trailer.
+# Run it by hand (Actions → YouTube trailer → Run workflow) or from /admin/automation.
+# Your intro compilation: commit it as marketing/trailer/intro.mp4 (it plays muted).
+on:
+  workflow_dispatch:
+    inputs:
+      resolution:
+        description: "Resolution"
+        type: choice
+        options: ["4k", "1080"]
+        default: "4k"
+
+permissions:
+  contents: read
+
+jobs:
+  trailer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Tools for the score and the video
+        run: |
+          python3 -m pip install --quiet numpy
+          command -v ffmpeg || (sudo apt-get update && sudo apt-get install -y ffmpeg)
+      - name: Render
+        run: node --no-warnings marketing/trailer/trailer.mjs
+        env:
+          TRAILER_RES: ${{ inputs.resolution == '1080' && '1080' || '' }}
+          SITE_URL: ${{ vars.SITE_URL || 'https://gagaflix.com' }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gagaflix-trailer-${{ github.run_number }}
+          path: |
+            out/trailer/gagaflix-trailer.mp4
+            out/trailer/thumbnail.jpg
+            out/trailer/youtube.txt
+          if-no-files-found: ignore
+          retention-days: 14

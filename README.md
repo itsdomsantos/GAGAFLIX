@@ -209,6 +209,13 @@ excluir, mínimo de visualizações, máximo por dia, canais bloqueados).
 Enquanto não ligares o Instagram, as 3 execuções diárias fazem o mesmo:
 desenham os posts e guardam-nos como artefacto, sem publicar.
 
+**Vídeo de abertura do reel (opcional):** o reel abre com fotos da Gaga das
+várias eras e "LADY GAGA" em grande. Para usares um vídeo teu por baixo desse
+texto, põe um clip **vertical (9:16), 2–4 s, MP4** no repositório em
+`automation/social/reel-intro.mp4` (GitHub → Add file → Upload files). Usa só
+vídeo que possas usar (teu, ou de fã com autorização) — clips oficiais podem
+fazer o Instagram silenciar ou retirar o reel.
+
 Opcional — usar a foto do próprio artigo nas notícias (em vez de uma foto do
 catálogo): **Settings → Secrets and variables → Actions → separador Variables
 → New repository variable** → Name `NEWS_ARTICLE_IMAGES`, Value `1`. A legenda
@@ -258,7 +265,27 @@ funcionarem, o site precisa de uma chave do GitHub (grátis):
 Pronto: abre `gagaflix.com/admin/automation` — vês os botões e as últimas
 execuções (a correr / ✓ / ✗), com link para o GitHub.
 
-### 10. Logo
+### 10. Trailer do YouTube (60 s, 4K)
+
+Um trailer cinematográfico do GAGAFLIX com música original gerada em código (sem
+direitos de terceiros): abertura com cartões e pancadas ("17 YEARS." "13 ERAS."…),
+o logo, e depois o **site verdadeiro no computador** a mostrar cada funcionalidade
+numa batida (eras, vídeos, setlists, timeline, pesquisa, notícias, música, chatbot).
+Só abre vídeos cujo player funciona.
+
+- **Gerar:** `/admin/automation` → **🎞️ Make the YouTube trailer** (ou Actions →
+  **YouTube trailer** → Run workflow). Demora ~30 min.
+- **Descarregar:** abre a execução → **Artifacts** → `gagaflix-trailer-…` →
+  `gagaflix-trailer.mp4`, `thumbnail.jpg` (capa 1280×720) e `youtube.txt`
+  (título, descrição e tags prontos a colar).
+- **A tua compilação na abertura:** põe o vídeo em
+  `marketing/trailer/intro.mp4` (GitHub → Add file → Upload files). Entra mudo,
+  por baixo dos cartões, nos primeiros ~12 s — a música é a do trailer. ⚠️ Imagens
+  de videoclipes/concertos oficiais podem gerar reclamações de direitos no YouTube
+  (Content ID); clips curtos e de fãs são mais seguros.
+- Publicar no YouTube é à mão (o upload pela API exige aprovação da Google).
+
+### 11. Logo
 
 Adiciona os ficheiros do teu logo flame a `public/`:
 

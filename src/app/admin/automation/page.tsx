@@ -9,6 +9,7 @@ const ACTIONS: { action: AutomationAction; label: string; hint: string; instagra
   { action: "news", label: "📰 Post a news story now", hint: "Picks the freshest Lady Gaga story not posted yet and puts it on Instagram (~3 min).", instagram: true },
   { action: "extra", label: "✨ Post today's extra", hint: "Today's anniversary / calendar date, else the videos just added, else a promo (~3 min).", instagram: true },
   { action: "reel", label: "🎬 Post the site reel", hint: "Films the live site on a phone and posts it as a reel (~6 min).", instagram: true },
+  { action: "trailer", label: "🎞️ Make the YouTube trailer", hint: "Renders the 60 s 4K trailer from the live site (~30 min). Download it from the run's Artifacts — nothing is uploaded to YouTube.", instagram: false },
 ];
 
 function badge(r: Run) {
@@ -68,6 +69,8 @@ export default function AdminAutomation() {
     setNotice(
       action === "catalog"
         ? "Started — new videos will appear in the Inbox in about a minute."
+        : action === "trailer"
+          ? "Rendering — in ~30 min open the run below → Artifacts → gagaflix-trailer."
         : test
           ? "Test run started — the images will be in the run's “Artifacts” on GitHub."
           : "Started — it will be on Instagram in a few minutes.",

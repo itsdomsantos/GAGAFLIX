@@ -4,8 +4,8 @@
 <meta charset="utf-8" />
 <!--
   Compositor for the GAGAFLIX site reel (1080×1920 at DPR 2 → 540×960 CSS px).
-  automation/social/site-reel.mjs films the real site on a phone and calls
-  window.set(state) once per frame. Copy sits ABOVE the phone, never over the footage.
+  automation/social/site-reel.mjs records the real site on a phone and calls
+  window.set(state) once per video frame. Copy sits ABOVE the phone, never over the footage.
 -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Metal+Mania&display=block" />
 <style>
@@ -14,42 +14,61 @@
   body { font-family: Archivo, system-ui, sans-serif; color: #ededf0; -webkit-font-smoothing: antialiased; }
   #stage { position: relative; width: 540px; height: 960px; overflow: hidden; --a: #e04e20; }
   .fill { position: absolute; inset: 0; }
-  .glow { background: radial-gradient(70% 40% at 50% 78%, color-mix(in srgb, var(--a) 42%, transparent), transparent 70%); transition: none; }
+  .glow { background: radial-gradient(70% 40% at 50% 78%, color-mix(in srgb, var(--a) 42%, transparent), transparent 70%); }
   .glow-top { background: radial-gradient(60% 22% at 50% 0%, color-mix(in srgb, var(--a) 30%, transparent), transparent 70%); }
   .grain { position: absolute; inset: 0; pointer-events: none; opacity: .08; mix-blend-mode: overlay;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
   .wordmark { font-family: "Metal Mania", serif; letter-spacing: .025em; line-height: 1;
     background-image: linear-gradient(180deg, #f4f4f7 0%, #b9bcc8 55%, #6e7280 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .cond { font-stretch: 66%; font-weight: 900; text-transform: uppercase; line-height: .9; letter-spacing: -.005em; }
+  .chrome { background-image: linear-gradient(180deg, #fff 0%, #e4e6ec 30%, #b9bcc8 55%, #6e7280 80%, #c9ccd6 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .cond { font-stretch: 66%; font-weight: 900; text-transform: uppercase; line-height: .88; letter-spacing: -.005em; }
   .kicker { font-size: 13px; font-weight: 800; letter-spacing: .32em; text-transform: uppercase; color: var(--a); }
 
   /* copy block above the phone */
-  #copy { position: absolute; left: 34px; right: 34px; top: 74px; height: 170px; }
-  #copy .t { font-size: 46px; color: #fff; margin-top: 10px; text-wrap: balance; }
+  #copy { position: absolute; left: 34px; right: 34px; top: 72px; height: 170px; }
+  #copy .t { font-size: 44px; color: #fff; margin-top: 10px; text-wrap: balance; }
   #copy .s { font-size: 15px; line-height: 1.4; color: #b9bcc8; margin-top: 10px; }
-  #brandTop { position: absolute; left: 34px; right: 34px; top: 30px; display: flex; justify-content: space-between; align-items: center; }
+  #brandTop { position: absolute; left: 34px; right: 34px; top: 28px; display: flex; justify-content: space-between; align-items: center; }
   #brandTop .w { font-size: 24px; }
   #brandTop .u { font-size: 11px; font-weight: 700; letter-spacing: .26em; color: #8e8e9a; text-transform: uppercase; }
 
   /* the phone */
-  #phone { position: absolute; left: 50%; top: 262px; width: 318px; height: 676px; margin-left: -159px; border-radius: 46px;
+  #phone { position: absolute; left: 50%; top: 258px; width: 318px; height: 682px; margin-left: -159px; border-radius: 46px;
     background: #050507; padding: 9px; box-shadow: 0 0 0 1.5px #3a3a44, 0 0 0 3px #15151a, 0 40px 90px -20px rgba(0,0,0,.9), 0 0 80px -10px color-mix(in srgb, var(--a) 45%, transparent);
     transform-origin: 50% 100%; }
-  #screen { width: 100%; height: 100%; border-radius: 38px; overflow: hidden; background: #0a0a0d; position: relative; }
+  #screen { width: 300px; height: 664px; border-radius: 38px; overflow: hidden; background: #0a0a0d; position: relative; }
   #screen img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
-  #island { position: absolute; top: 18px; left: 50%; width: 86px; height: 24px; margin-left: -43px; border-radius: 20px; background: #000; z-index: 2; }
+  #island { position: absolute; top: 16px; left: 50%; width: 82px; height: 23px; margin-left: -41px; border-radius: 20px; background: #000; z-index: 2; }
   #flash { position: absolute; inset: 0; background: #fff; opacity: 0; mix-blend-mode: overlay; pointer-events: none; }
+  /* the "finger": a ring where the reel taps */
+  #tap { position: absolute; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; opacity: 0; z-index: 3;
+    background: radial-gradient(circle, rgba(255,255,255,.55) 0 30%, rgba(255,255,255,.18) 31% 60%, transparent 61%);
+    box-shadow: 0 0 0 2px rgba(255,255,255,.85), 0 0 24px var(--a); }
 
-  /* hook + end card */
-  .center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 16px; padding: 0 40px; }
-  #hook .w { font-size: 92px; }
-  #hook .s { font-size: 14px; font-weight: 700; letter-spacing: .34em; text-transform: uppercase; color: #b9bcc8; }
+  /* hook */
+  #hook { position: absolute; inset: 0; opacity: 0; overflow: hidden; background: #000; }
+  #hookImg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; }
+  #hookShade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.35) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,.25) 55%, rgba(0,0,0,.92) 100%); }
+  #hookFlash { position: absolute; inset: 0; background: var(--a); mix-blend-mode: screen; opacity: 0; }
+  #hookText { position: absolute; left: 30px; right: 30px; bottom: 120px; }
+  #hookText .big { font-size: 128px; }
+  #hookText .sub { font-size: 15px; font-weight: 800; letter-spacing: .34em; text-transform: uppercase; color: #fff; margin-top: 14px; }
+  #hookLogo { position: absolute; left: 0; right: 0; top: 50%; text-align: center; transform: translateY(-50%); opacity: 0; }
+  #hookLogo .w { font-size: 96px; }
+  #hookLogo .s { font-size: 13px; font-weight: 800; letter-spacing: .34em; text-transform: uppercase; color: #d9d9e0; margin-top: 14px; }
+
+  /* end card */
+  #end { position: absolute; inset: 0; opacity: 0; }
+  #collage { position: absolute; inset: -30px; display: grid; grid-template-columns: repeat(3, 1fr); filter: grayscale(.35) brightness(.38); }
+  #collage img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  #endInner { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 16px; padding: 0 36px;
+    background: radial-gradient(70% 50% at 50% 50%, rgba(10,10,13,.35), rgba(10,10,13,.92)); }
   #end .w { font-size: 84px; }
   #end .line { font-size: 40px; color: #fff; }
-  #end .pill { display: inline-flex; align-items: center; gap: 10px; padding: 10px 20px 9px; border-radius: 999px; border: 1.5px solid var(--a); font-size: 14px; font-weight: 700; letter-spacing: .24em; text-transform: uppercase; margin-top: 8px; }
+  #end .pill { display: inline-flex; align-items: center; gap: 10px; padding: 10px 20px 9px; border-radius: 999px; border: 1.5px solid var(--a); background: rgba(10,10,13,.6); font-size: 14px; font-weight: 700; letter-spacing: .24em; text-transform: uppercase; margin-top: 8px; }
   #end .pill i { width: 7px; height: 7px; border-radius: 50%; background: var(--a); box-shadow: 0 0 10px var(--a); }
-  #end .stats { font-size: 12px; font-weight: 700; letter-spacing: .26em; text-transform: uppercase; color: #8e8e9a; }
-  #end .note { font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: #6e7280; margin-top: 18px; }
+  #end .stats { font-size: 12px; font-weight: 700; letter-spacing: .26em; text-transform: uppercase; color: #b9bcc8; }
+  #end .note { font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: #8e8e9a; margin-top: 18px; }
 </style>
 </head>
 <body>
@@ -58,14 +77,25 @@
   <div class="fill glow" id="glow"></div>
   <div id="brandTop"><span class="w wordmark">GAGAFLIX</span><span class="u">gagaflix.com</span></div>
   <div id="copy"><div class="kicker" id="k"></div><div class="t cond" id="t"></div><div class="s" id="s"></div></div>
-  <div id="phone"><div id="screen"><img id="shot" /><div id="island"></div><div id="flash"></div></div></div>
-  <div class="center" id="hook" style="opacity:0"><span class="w wordmark">GAGAFLIX</span><span class="s">The Lady Gaga streaming archive</span></div>
-  <div class="center" id="end" style="opacity:0">
-    <span class="w wordmark">GAGAFLIX</span>
-    <span class="line cond">Every era.<br/>Every performance.</span>
-    <span class="stats" id="stats"></span>
-    <span class="pill"><i></i>Link in bio · gagaflix.com</span>
-    <span class="note">Free · fan-made · non-profit</span>
+  <div id="phone"><div id="screen"><img id="shot" /><div id="island"></div><div id="wipe" style="position:absolute;inset:0;z-index:2;pointer-events:none;display:none"></div><div id="tap"></div><div id="flash"></div></div></div>
+
+  <div id="hook">
+    <img id="hookImg" />
+    <div id="hookShade"></div>
+    <div id="hookFlash"></div>
+    <div id="hookText"><div class="big cond chrome">Lady<br/>Gaga</div><div class="sub" id="hookSub">Every era. Every performance.</div></div>
+    <div id="hookLogo"><div class="w wordmark">GAGAFLIX</div><div class="s">The Lady Gaga streaming archive</div></div>
+  </div>
+
+  <div id="end">
+    <div id="collage"></div>
+    <div id="endInner">
+      <span class="w wordmark">GAGAFLIX</span>
+      <span class="line cond">Every era.<br/>Every performance.</span>
+      <span class="stats" id="stats"></span>
+      <span class="pill"><i></i>Link in bio · gagaflix.com</span>
+      <span class="note">Free · fan-made · non-profit</span>
+    </div>
   </div>
   <div class="grain"></div>
 </div>
@@ -73,42 +103,87 @@
 const $ = (id) => document.getElementById(id);
 const clamp = (x) => Math.min(1, Math.max(0, x));
 const ease = (x) => 1 - (1 - clamp(x)) ** 3;
-let lastSrc = null;
+const SCREEN = { w: 300, h: 664 };
+/** The site's era transition, redrawn by the video: 9 strips in the era colour (even ones from
+ *  the top, odd from the bottom) cover the screen, hold, then pull away. ms = time since the tap. */
+const WIPE = { C: 9, ST: 34, D: 360, HOLD: 260 };
+WIPE.COVER = (WIPE.C - 1) * WIPE.ST + WIPE.D;
+WIPE.TOTAL = WIPE.COVER * 2 + WIPE.HOLD;
+const inOut = (x) => { const t = clamp(x); return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2; };
+function drawWipe(el, ms, color) {
+  const on = ms != null && ms >= 0 && ms <= WIPE.TOTAL;
+  el.style.display = on ? "flex" : "none";
+  if (!on) return;
+  if (!el.children.length) el.innerHTML = Array.from({ length: WIPE.C }, () => '<i style="flex:1;height:100%;display:block"></i>').join("");
+  [...el.children].forEach((s, i) => {
+    let off; // 0 = covering, 1 = out of view
+    if (ms < WIPE.COVER + WIPE.HOLD) off = 1 - inOut((ms - i * WIPE.ST) / WIPE.D);
+    else off = inOut((ms - WIPE.COVER - WIPE.HOLD - (WIPE.C - 1 - i) * WIPE.ST) / WIPE.D);
+    s.style.background = color;
+    s.style.transform = `translateY(${(i % 2 ? 101 : -101) * off}%)`;
+  });
+}
+ // the phone's screen in CSS px; site viewport is 390 wide
+const shown = {};
+const setSrc = (id, src) => { if (src && shown[id] !== src) { $(id).src = shown[id] = src; } };
+
+window.setup = ({ collage = [] }) => {
+  $("collage").innerHTML = collage.slice(0, 9).map((s) => `<img src="${s}">`).join("");
+};
 
 /**
- * state: { accent, hook?: p, end?: p, phone?: { src, enter, y, scale }, copy?: { k, t, s, p, out }, flash, stats }
+ * state: { accent,
+ *   hook?: { img, p (0..1 within the hook), t (s), flash, logo (0..1), text (0..1), zoom },
+ *   phone?: { src, enter (0..1) }, tap?: { x, y, p } (site CSS px; p 0..1 life of the ring),
+ *   copy?: { k, t, s, a (0..1 visibility), rise (0..1) }, flash, end?: p, stats }
  */
 window.set = (st) => {
   $("stage").style.setProperty("--a", st.accent || "#e04e20");
-  const showPhone = Boolean(st.phone);
-  $("phone").style.opacity = showPhone ? 1 : 0;
-  $("copy").style.opacity = st.copy ? 1 : 0;
-  $("brandTop").style.opacity = showPhone ? 1 : 0;
-  $("glow").style.opacity = showPhone ? 1 : 0.6;
+  const phoneOn = Boolean(st.phone);
+  for (const id of ["phone", "brandTop", "glow"]) $(id).style.opacity = phoneOn ? 1 : 0;
+  $("copy").style.opacity = st.copy ? st.copy.a ?? 1 : 0;
 
   if (st.phone) {
-    if (st.phone.src !== lastSrc) $("shot").src = lastSrc = st.phone.src;
+    setSrc("shot", st.phone.src);
     const e = ease(st.phone.enter ?? 1);
-    $("phone").style.transform = `translateY(${(1 - e) * 700 + (st.phone.y || 0)}px) rotate(${(1 - e) * -6}deg) scale(${st.phone.scale ?? 1})`;
+    $("phone").style.transform = `translateY(${(1 - e) * 720}px) rotate(${(1 - e) * -6}deg)`;
   }
   $("flash").style.opacity = st.flash || 0;
+  drawWipe($("wipe"), st.wipe?.ms, st.wipe?.color);
+
+  if (st.tap) {
+    const k = SCREEN.w / 390;
+    const p = st.tap.p;
+    $("tap").style.left = `${st.tap.x * k}px`;
+    $("tap").style.top = `${st.tap.y * k}px`;
+    $("tap").style.opacity = p < 0.15 ? p / 0.15 : 1 - ease((p - 0.45) / 0.55);
+    $("tap").style.transform = `scale(${p < 0.3 ? 1.4 - (p / 0.3) * 0.55 : 0.85 + 0.6 * ease((p - 0.3) / 0.7)})`;
+  } else $("tap").style.opacity = 0;
 
   if (st.copy) {
-    const { k, t, s, p = 1, out = 0 } = st.copy;
-    if ($("t").textContent !== t) { $("k").textContent = k; $("t").textContent = t; $("s").textContent = s || ""; }
-    const a = ease(p) * (1 - ease(out));
-    $("copy").style.opacity = a;
-    $("copy").style.transform = `translateY(${(1 - ease(p)) * 24}px)`;
+    if ($("t").textContent !== st.copy.t) { $("k").textContent = st.copy.k; $("t").textContent = st.copy.t; $("s").textContent = st.copy.s || ""; }
+    $("copy").style.transform = `translateY(${(1 - ease(st.copy.rise ?? 1)) * 22}px)`;
   }
 
   const h = st.hook;
-  $("hook").style.opacity = h == null ? 0 : ease(h * 4) * (1 - ease((h - 0.85) / 0.15));
-  if (h != null) $("hook").style.transform = `scale(${1.08 - 0.08 * ease(h * 2)})`;
+  $("hook").style.opacity = h ? 1 : 0;
+  if (h) {
+    setSrc("hookImg", h.img);
+    $("hookImg").style.transform = `scale(${h.zoom ?? 1.08})`;
+    $("hookFlash").style.opacity = h.flash || 0;
+    $("hookText").style.opacity = h.text ?? 0;
+    $("hookText").style.transform = `translateY(${(1 - ease(h.text ?? 0)) * 30}px)`;
+    $("hookLogo").style.opacity = h.logo ?? 0;
+    $("hookLogo").style.transform = `translateY(-50%) scale(${1.15 - 0.15 * ease(h.logo ?? 0)})`;
+    $("hookShade").style.background = h.logo > 0
+      ? `rgba(0,0,0,${0.35 + 0.5 * h.logo})`
+      : "";
+  }
 
-  const en = st.end;
-  $("end").style.opacity = en == null ? 0 : ease(en * 3);
-  if (en != null) {
-    $("end").style.transform = `translateY(${(1 - ease(en * 2.5)) * 30}px)`;
+  $("end").style.opacity = st.end == null ? 0 : ease(st.end * 3);
+  if (st.end != null) {
+    $("endInner").style.transform = `translateY(${(1 - ease(st.end * 2.5)) * 30}px)`;
+    $("collage").style.transform = `scale(${1.08 - 0.06 * st.end})`;
     $("stats").textContent = st.stats || "";
   }
 };
