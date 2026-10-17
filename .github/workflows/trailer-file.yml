@@ -1,0 +1,20 @@
+name: trailer-file
+on: push
+permissions:
+  contents: write
+  actions: read
+jobs:
+  copy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: gagaflix-trailer-1
+          run-id: 38930322051
+          github-token: ${{ github.token }}
+          path: trailer
+      - run: |
+          ls -la trailer
+          git config user.name "github-actions" && git config user.email "actions@github.com"
+          git checkout --orphan trailer-out && git rm -rqf . && git add trailer && git commit -qm "trailer render" && git push -f origin trailer-out
