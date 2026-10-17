@@ -1,0 +1,12 @@
+name: probe-x
+on: push
+jobs:
+  x:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          for h in gagaflix gagaflixofficial gagaflix_ gagaflixbackup; do
+            echo "=== $h"
+            curl -s "https://api.fxtwitter.com/$h" | jq -c '.user | {screen_name, name, followers, tweets, description} // .' | head -c 600; echo
+            curl -s "https://api.vxtwitter.com/$h" | jq -c '{screen_name, name, followers_count}' 2>/dev/null | head -c 300; echo
+          done
