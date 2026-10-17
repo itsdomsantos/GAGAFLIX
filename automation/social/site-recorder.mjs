@@ -82,6 +82,16 @@ const IPHONE_UA =
  * @param browser  a Playwright Chromium browser (see render.mjs openBrowser)
  * @param opts     { site, viewport: {width,height}, dpr, mobile, slow, quality }
  */
+/** What a YouTube embed looks like before it plays: thumbnail, dark gradient, red play button. */
+const posterHtml = (id) => `<!doctype html><html><body style="margin:0;background:#000;overflow:hidden">
+<div id="p" style="position:fixed;inset:0;background:#000 url(https://i.ytimg.com/vi/${id}/maxresdefault.jpg) center/cover"></div>
+<div style="position:fixed;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.45),transparent 22%,transparent 80%,rgba(0,0,0,.35))"></div>
+<svg viewBox="0 0 68 48" style="position:fixed;left:50%;top:50%;width:68px;height:48px;margin:-24px 0 0 -34px">
+<path d="M66.5 7.7c-.8-2.9-2.5-5.4-5.4-6.2C55.8.1 34 0 34 0S12.2.1 6.9 1.6C4 2.4 2.3 4.8 1.5 7.7.1 13 0 24 0 24s.1 11 1.5 16.3c.8 2.9 2.5 5.4 5.4 6.2C12.2 47.9 34 48 34 48s21.8-.1 27.1-1.6c2.9-.8 4.6-3.2 5.4-6.2C67.9 35 68 24 68 24s-.1-11-1.5-16.3z" fill="#f00"/>
+<path d="M45 24 27 14v20" fill="#fff"/></svg>
+<script>const i=new Image();i.onload=()=>{if(i.naturalWidth<200)document.getElementById("p").style.backgroundImage="url(https://i.ytimg.com/vi/${id}/hqdefault.jpg)"};i.src="https://i.ytimg.com/vi/${id}/maxresdefault.jpg"</script>
+</body></html>`;
+
 export async function createRecorder(browser, { site, viewport, dpr = 2, mobile = false, slow = 3, quality = 82 }) {
   const SITE = site.replace(/\/$/, "");
   const SLOW = Math.max(1, slow);
@@ -118,6 +128,12 @@ export async function createRecorder(browser, { site, viewport, dpr = 2, mobile 
   }, SLOW);
   // no analytics hits from the robot
   await ctx.route("**/api/track**", (r) => r.fulfill({ status: 204, body: "" }));
+  // YouTube refuses to play inside a cloud browser ("An error occurred…"), so the
+  // embed is filmed as its poster: the video's own thumbnail + play button, never an error.
+  await ctx.route(/youtube(-nocookie)?\.com\/embed\//, (r) => {
+    const id = new URL(r.request().url()).pathname.split("/").pop();
+    r.fulfill({ contentType: "text/html", body: posterHtml(id) });
+  });
   if (process.env.REEL_MOCK_IMAGES === "1") {
     const art = readdirSync(join(ROOT, "public/eras")).filter((f) => f.endsWith(".png"));
     let n = 0;

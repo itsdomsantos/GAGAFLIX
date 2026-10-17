@@ -198,7 +198,13 @@ window.set = (st) => {
     setText("winUrl", s.url || "gagaflix.com");
     $("win").style.transform = `perspective(2400px) rotateY(${s.rot ?? -8}deg) rotateX(${s.tilt ?? 3}deg) scale(${s.scale ?? 1})`;
     setText("k", s.k || "");
-    setText("t", s.t || "");
+    if ($("t").textContent !== (s.t || "")) {
+      // shrink the headline until its longest word fits the copy column ("PERFORMANCE," overflowed)
+      $("t").textContent = s.t || "";
+      let px = 92;
+      $("t").style.fontSize = px + "px";
+      while (px > 56 && $("t").scrollWidth > $("t").clientWidth) $("t").style.fontSize = (px -= 4) + "px";
+    }
     setText("s", s.s || "");
     $("copy").style.opacity = s.copy ?? 1;
     $("copy").style.transform = `translateY(calc(-50% + ${(1 - ease(s.copy ?? 1)) * 30}px))`;
