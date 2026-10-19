@@ -5,6 +5,10 @@
  * page for today and each event's own share data. Every word comes from the
  * calendar entry itself — nothing is invented; an "N years ago" count is shown
  * only when the entry itself carries the original year.
+ *
+ * Plus automation/anniversaries.json: the LGN calendar's anniversaries with the
+ * ORIGINAL year (so "17 years ago today" is right) and duplicates resolved. Live
+ * LGN anniversary entries that match one of those are left to the curated list.
  */
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -61,7 +65,7 @@ function normalise(ev, today) {
   const from = anniversary ? originYear(ev, year) : null;
   return {
     key: `cal:${ev.uid || ev.url || ev.title}:${today}`,
-    title: ev.title.replace(/\s*\(?anniversary\)?\s*$/i, "").trim() || ev.title,
+    title: ev.title.replace(/\s*[-–—]?\s*\(?anniversar[yi]\)?\s*$/i, "").trim() || ev.title,
     description: ev.description || null,
     location: ev.location || null,
     image: ev.image ?? null,
@@ -120,6 +124,44 @@ async function fromDayPage(source, today) {
 }
 
 /** Today's relevant calendar entries, not yet posted. --calendar-file <ics> for offline tests. */
+/** "Disease - Single Anniversary" and "Disease Single Release - Anniversary" → "disease single". */
+export const annKey = (title) =>
+  title
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\(with [^)]*\)/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .split(" ")
+    .filter((w) => w && !["anniversary", "anniverary", "release", "releases", "the", "lady", "gaga", "day", "commences", "begins"].includes(w))
+    .join(" ");
+
+/** Curated anniversaries for today (original year before this one). */
+function curated(today) {
+  const { items = [], corrected = [] } = JSON.parse(readFileSync(join(ROOT, "automation/anniversaries.json"), "utf8"));
+  const year = Number(today.slice(0, 4));
+  const keys = [...items, ...corrected].map((i) => annKey(i.title).split(" "));
+  // "Joanne release" is covered by "Joanne album release": every word of it is in a curated title
+  const known = (title) => {
+    const words = annKey(title).split(" ").filter(Boolean);
+    return words.length > 0 && keys.some((k) => words.every((w) => k.includes(w)));
+  };
+  const events = items
+    .filter((i) => i.date.slice(5) === today.slice(5) && Number(i.date.slice(0, 4)) < year)
+    .map((i) => ({
+      key: `ann:${annKey(i.title)}:${year}`,
+      title: i.title,
+      description: null,
+      location: null,
+      image: null,
+      anniversary: true,
+      era: i.era ?? null,
+      years: year - Number(i.date.slice(0, 4)),
+      from: Number(i.date.slice(0, 4)),
+    }));
+  return { events, known };
+}
+
 export async function todaysEvents(state, today) {
   const file = opt("--calendar-file");
   let raw = [];
@@ -137,7 +179,13 @@ export async function todaysEvents(state, today) {
       }
     }
   }
-  const events = raw.filter(relevant).map((ev) => normalise(ev, today)).filter((ev) => !state.posted?.[ev.key]);
+  const list = curated(today);
+  const live = raw
+    .filter(relevant)
+    .map((ev) => normalise(ev, today))
+    // anniversaries the curated list knows are posted from it, on the verified date
+    .filter((ev) => !(ev.anniversary && list.known(ev.title)));
+  const events = [...list.events, ...live].filter((ev) => !state.posted?.[ev.key]);
   console.log(`  calendar: ${raw.length} entries for ${today}, ${events.length} usable${events.length ? ` (${events.map((e) => e.title).join(" · ")})` : ""}`);
   return events;
 }
