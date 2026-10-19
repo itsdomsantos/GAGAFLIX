@@ -183,7 +183,13 @@ async function todayPost(data, state, browser) {
       };
     }),
     ...events.map((ev) => {
-      const match = photoFor(`${ev.title} ${ev.description ?? ""}`, data);
+      let match = photoFor(`${ev.title} ${ev.description ?? ""}`, data);
+      // curated anniversaries know their era: use its photo and hashtag
+      const knownEra = ev.era && match.era?.slug !== ev.era ? data.eras.find((e) => e.slug === ev.era) : null;
+      if (knownEra) {
+        const pool = data.videos.filter((v) => v.era_slug === knownEra.slug && thumbCandidates(v).length);
+        match = { era: knownEra, video: pool.length ? pool[dayNumber % pool.length] : null };
+      }
       const body = sentences(ev.description, ev.title, 220) || null;
       const line = ev.years
         ? `${ev.years} year${ev.years === 1 ? "" : "s"} ago today: ${ev.title}.`
