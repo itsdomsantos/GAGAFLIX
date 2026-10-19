@@ -52,7 +52,9 @@ const TABLOIDS = ["daily mail", "the sun", "mirror", "express", "daily star", "o
 export function trustedOutlet(outlet = "") {
   const o = outlet.toLowerCase();
   if (TABLOIDS.some((t) => o.includes(t))) return false;
-  return TRUSTED.some((t) => o.includes(t));
+  // whole words only: "time" must not match "Khaleej Times", "elle" not "Bellevue"
+  const esc = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return TRUSTED.some((t) => new RegExp(`(^|[^a-z])${esc(t)}([^a-z]|$)`).test(o));
 }
 
 /** { score, junk, reasons } for a headline (+ the outlet's excerpt, if any). */

@@ -137,5 +137,7 @@ export async function todaysEvents(state, today) {
       }
     }
   }
-  return raw.filter(relevant).map((ev) => normalise(ev, today)).filter((ev) => !state.posted?.[ev.key]);
+  const events = raw.filter(relevant).map((ev) => normalise(ev, today)).filter((ev) => !state.posted?.[ev.key]);
+  console.log(`  calendar: ${raw.length} entries for ${today}, ${events.length} usable${events.length ? ` (${events.map((e) => e.title).join(" · ")})` : ""}`);
+  return events;
 }
