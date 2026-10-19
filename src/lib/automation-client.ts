@@ -1,6 +1,6 @@
 import { getBrowserClient } from "./supabase";
 
-export type AutomationAction = "catalog" | "news" | "extra" | "reel";
+export type AutomationAction = "catalog" | "news" | "extra" | "reel" | "trailer";
 
 /** Calls /api/admin/automation with the admin's session token. */
 export async function automationApi(method: "GET" | "POST", body?: { action: AutomationAction; test: boolean }) {

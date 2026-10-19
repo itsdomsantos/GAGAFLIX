@@ -33,7 +33,11 @@ export function thumbCandidates(video) {
 }
 
 export async function openBrowser() {
-  return chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
+  return chromium.launch({
+    ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {}),
+    // the reel films one page while another composites: never slow down "background" pages
+    args: ["--disable-background-timer-throttling", "--disable-renderer-backgrounding", "--disable-backgrounding-occluded-windows"],
+  });
 }
 
 /** First candidate image that actually loads at a usable size (YouTube serves a 120px grey placeholder for missing maxres). */

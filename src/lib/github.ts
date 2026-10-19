@@ -12,6 +12,7 @@ export const AUTOMATIONS = {
   news: { workflow: "instagram-autopilot.yml", label: "Instagram · news", slot: "news" },
   extra: { workflow: "instagram-autopilot.yml", label: "Instagram · extra", slot: "extra" },
   reel: { workflow: "instagram-autopilot.yml", label: "Instagram · site reel", slot: "reel" },
+  trailer: { workflow: "trailer.yml", label: "YouTube trailer" },
 } as const;
 
 export type AutomationKey = keyof typeof AUTOMATIONS;
@@ -29,7 +30,7 @@ function headers() {
 
 export async function dispatch(key: AutomationKey, test: boolean): Promise<void> {
   const a = AUTOMATIONS[key];
-  const inputs = "slot" in a ? { slot: a.slot, dry_run: test } : undefined;
+  const inputs = "slot" in a ? { slot: a.slot, dry_run: test } : key === "trailer" ? { resolution: "4k" } : undefined;
   const res = await fetch(`${API}/workflows/${a.workflow}/dispatches`, {
     method: "POST",
     headers: headers(),
@@ -56,7 +57,7 @@ export interface RunSummary {
 
 /** The latest runs of the two automation workflows, newest first. */
 export async function recentRuns(): Promise<RunSummary[]> {
-  const files = ["catalog-robot.yml", "instagram-autopilot.yml"];
+  const files = ["catalog-robot.yml", "instagram-autopilot.yml", "trailer.yml"];
   const lists = await Promise.all(
     files.map(async (f) => {
       const res = await fetch(`${API}/workflows/${f}/runs?per_page=8`, { headers: headers(), cache: "no-store" });
