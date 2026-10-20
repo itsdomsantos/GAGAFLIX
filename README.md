@@ -43,8 +43,8 @@ Supabase grátis. Sem cartão, sem chaves pagas.
 Regras do autopiloto: nada é inventado — o texto vem da timeline e do catálogo
 (que tu controlas) ou, nas notícias e no calendário, das palavras da própria
 fonte (título e resumo dela), sempre creditada. Nunca usa clips dos vídeos: só
-fotos das eras e thumbnails do catálogo, com crédito na legenda. (Para usar a
-foto do próprio artigo, cria a variável `NEWS_ARTICLE_IMAGES` = `1` — ver 8.4.) Legendas curtas, no máximo 1–2 emojis,
+fotos das eras e thumbnails do catálogo, com crédito na legenda. (Nas notícias usa a
+foto do próprio artigo quando existe, com crédito; para desligar, variável `NEWS_ARTICLE_IMAGES` = `0` — ver 8.4.) Legendas curtas, no máximo 1–2 emojis,
 "link in bio", "Fan-made, non-profit." e hashtags no fim. O que já foi
 publicado fica guardado em `site_settings` (chave `instagram_autopilot`), por
 isso nada se repete.
@@ -216,11 +216,11 @@ texto, põe um clip **vertical (9:16), 2–4 s, MP4** no repositório em
 vídeo que possas usar (teu, ou de fã com autorização) — clips oficiais podem
 fazer o Instagram silenciar ou retirar o reel.
 
-Opcional — usar a foto do próprio artigo nas notícias (em vez de uma foto do
-catálogo): **Settings → Secrets and variables → Actions → separador Variables
-→ New repository variable** → Name `NEWS_ARTICLE_IMAGES`, Value `1`. A legenda
-credita sempre ("Image via …"). Recomendo pedir autorização ao Lady Gaga Now
-antes de usar as fotos deles.
+As notícias usam a foto do próprio artigo quando o site a publica (com crédito
+"Image via …" na legenda); senão, uma foto do catálogo, sempre diferente das
+últimas 40. Para voltar só às fotos do catálogo: **Settings → Secrets and
+variables → Actions → separador Variables → New repository variable** → Name
+`NEWS_ARTICLE_IMAGES`, Value `0`.
 
 **8.5 — Ligar o Instagram (fazemos juntos, passo a passo)**
 
