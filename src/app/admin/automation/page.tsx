@@ -8,7 +8,7 @@ const ACTIONS: { action: AutomationAction; label: string; hint: string; instagra
   { action: "catalog", label: "🔎 Find new videos now", hint: "Reads the YouTube channels right now. New videos land in the Inbox for you to approve (~1 min).", instagram: false },
   { action: "news", label: "📰 Post a news story now", hint: "Picks the freshest Lady Gaga story not posted yet and puts it on Instagram (~3 min).", instagram: true },
   { action: "extra", label: "✨ Post today's extra", hint: "Today's anniversary / calendar date, else the videos just added, else a promo (~3 min).", instagram: true },
-  { action: "reel", label: "🎬 Post the site reel", hint: "Films the live site on a phone and posts it as a reel (~6 min).", instagram: true },
+  { action: "reel", label: "🎬 Make the site reel (draft)", hint: "Films the live site on a phone (~6 min). Never posted: download it from the run (link in its summary) to edit and post yourself.", instagram: false },
   { action: "trailer", label: "🎞️ Make the YouTube trailer", hint: "Renders the 60 s 4K trailer from the live site (~30 min). Download it from the run's Artifacts — nothing is uploaded to YouTube.", instagram: false },
 ];
 

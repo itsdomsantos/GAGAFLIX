@@ -30,7 +30,9 @@ import { openBrowser, renderCards, thumbCandidates } from "./render.mjs";
 import { renderSiteReel } from "./site-reel.mjs";
 import { hostFile, loadState, saveState } from "./state.mjs";
 
-const PROMOS = ["vault", "era", "reel"];
+// promo rotation for the extra slot. Reels are NOT in it: the owner edits every promo reel
+// before it goes out, so the reel slot only renders one (see reelPost) and never publishes.
+const PROMOS = ["vault", "era"];
 const BASE_TAGS = ["#LadyGaga", "#LittleMonsters", "#Gaga"];
 const NOTE = "Fan-made, non-profit.";
 // the article's own photo (credited) unless NEWS_ARTICLE_IMAGES=0; outlet logos/placeholders are skipped
@@ -424,8 +426,18 @@ async function reelPost(data, state, browser) {
     "",
     hashtags("#GagaFlix", "#GagaEras"),
   ].join("\n");
-  const id = await ship({ kind: "reel", files: [cover], caption, video });
-  return { id, mark: () => {} };
+  // never published: hosted for download so the owner can edit it and post it themselves
+  mkdirSync(outDir, { recursive: true });
+  writeFileSync(join(outDir, "caption.txt"), caption + "\n");
+  let links = "";
+  if (db) {
+    const folder = `drafts/${today}-reel-${Date.now().toString(36)}`;
+    const [videoUrl, coverUrl] = [await hostFile(db, video, folder), await hostFile(db, cover, folder)];
+    links = `\n\nDownload: ${videoUrl}\nCover: ${coverUrl}`;
+  }
+  console.log(`\n── reel (draft, NOT published) ──\n${caption}\n\nfiles:\n  ${video}\n  ${cover}${links}`);
+  summary(`## 🎬 Site reel — draft for you to edit (not published)${links.replace(/\n/g, "\n\n")}\n\nAlso in this run's artifacts.\n\n\`\`\`\n${caption}\n\`\`\``);
+  return null;
 }
 
 /* ---------------- main ---------------- */
