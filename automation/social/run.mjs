@@ -33,7 +33,9 @@ import { hostFile, loadState, saveState } from "./state.mjs";
 const PROMOS = ["vault", "era", "reel"];
 const BASE_TAGS = ["#LadyGaga", "#LittleMonsters", "#Gaga"];
 const NOTE = "Fan-made, non-profit.";
-const ARTICLE_IMAGES = process.env.NEWS_ARTICLE_IMAGES === "1";
+// the article's own photo (credited) unless NEWS_ARTICLE_IMAGES=0; outlet logos/placeholders are skipped
+const ARTICLE_IMAGES = process.env.NEWS_ARTICLE_IMAGES !== "0";
+const articlePhoto = (url) => (url && !/logo|default|placeholder|favicon|sprite|blank/i.test(url) ? [url] : []);
 
 const slot = opt("--slot") || "extra";
 const today = opt("--today") || new Date().toISOString().slice(0, 10);
@@ -84,11 +86,20 @@ function pickFresh(pool, seed, state) {
   return v;
 }
 
+const GENERIC = new Set(["live", "interview", "performance", "official", "full", "full show", "full concert", "concert", "music video", "red carpet", "behind the scenes", "speech", "acceptance speech"]);
+
 function photoFor(text, data, state) {
   const t = ` ${norm(text)} `;
   const eraOf = (slug) => data.eras.find((e) => e.slug === slug) ?? null;
   const withThumb = data.videos.filter((v) => thumbCandidates(v).length);
-  const shortTitle = (v) => norm(v.title.split(/\s[—–-]\s|\s\(/)[0]);
+  // "Lady Gaga - Bad Romance (Official Music Video)" → "bad romance": the artist prefix is not a title,
+  // and every story says "Lady Gaga" (this used to match one video for every story)
+  const shortTitle = (v) => {
+    const parts = v.title.split(/\s[—–-]\s|:\s/);
+    const main = parts.length > 1 && /^\s*(lady\s+)?gaga\b/i.test(parts[0]) ? parts[1] : parts[0];
+    const n = norm(main.split(/\s\(/)[0]);
+    return GENERIC.has(n) || /\bgaga\b/.test(n) ? "" : n;
+  };
   const named = withThumb
     .filter((v) => shortTitle(v).length >= 4 && t.includes(` ${shortTitle(v)} `))
     .sort((a, b) => Number(b.type === "mv") - Number(a.type === "mv") || shortTitle(b).length - shortTitle(a).length);
@@ -135,7 +146,7 @@ async function newsPost(data, state, browser) {
   if (!stories.length) return null;
   const story = await enrich(stories[0]);
   const match = photoFor(`${story.title} ${story.summary}`, data, state);
-  const images = [...(ARTICLE_IMAGES && story.articleImage ? [story.articleImage] : []), ...imagesOf(match)];
+  const images = [...(ARTICLE_IMAGES ? articlePhoto(story.articleImage) : []), ...imagesOf(match)];
   const card = {
     kind: "news",
     images,
@@ -221,7 +232,7 @@ async function todayPost(data, state, browser) {
         video: match.video,
         card: {
           kind: "anniversary",
-          images: [...(ARTICLE_IMAGES && ev.image ? [ev.image] : []), ...imagesOf(match)],
+          images: [...(ARTICLE_IMAGES ? articlePhoto(ev.image) : []), ...imagesOf(match)],
           data: {
             accent: match.era?.accent,
             years: ev.years,
