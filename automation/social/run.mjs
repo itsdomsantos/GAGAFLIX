@@ -71,7 +71,20 @@ function creditFor(src, video) {
  * title is named in it, else an era that is named, else the current era (a
  * different video each day so the feed doesn't repeat one picture).
  */
-function photoFor(text, data) {
+/** Videos whose picture went out recently (state.recentPhotos) are skipped, so the feed never repeats a photo. */
+const pickedNow = [];
+const hash = (t) => [...t].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
+function pickFresh(pool, seed, state) {
+  if (!pool.length) return null;
+  const recent = new Set([...(state?.recentPhotos ?? []), ...pickedNow]);
+  const fresh = pool.filter((v) => !recent.has(v.id));
+  const list = fresh.length ? fresh : pool;
+  const v = list[hash(seed) % list.length];
+  pickedNow.push(v.id);
+  return v;
+}
+
+function photoFor(text, data, state) {
   const t = ` ${norm(text)} `;
   const eraOf = (slug) => data.eras.find((e) => e.slug === slug) ?? null;
   const withThumb = data.videos.filter((v) => thumbCandidates(v).length);
@@ -79,13 +92,16 @@ function photoFor(text, data) {
   const named = withThumb
     .filter((v) => shortTitle(v).length >= 4 && t.includes(` ${shortTitle(v)} `))
     .sort((a, b) => Number(b.type === "mv") - Number(a.type === "mv") || shortTitle(b).length - shortTitle(a).length);
-  if (named.length) return { video: named[0], era: eraOf(named[0].era_slug) };
-  const era =
-    [...data.eras].sort((a, b) => b.name.length - a.name.length).find((e) => norm(e.name).length >= 4 && t.includes(` ${norm(e.name.split(":")[0])} `)) ??
-    [...data.eras].sort((a, b) => b.sort - a.sort)[0] ??
-    null;
-  const pool = withThumb.filter((v) => v.era_slug === era?.slug);
-  return { video: pool.length ? pool[dayNumber % pool.length] : null, era };
+  if (named.length) {
+    pickedNow.push(named[0].id);
+    return { video: named[0], era: eraOf(named[0].era_slug) };
+  }
+  const era = [...data.eras].sort((a, b) => b.name.length - a.name.length).find((e) => norm(e.name).length >= 4 && t.includes(` ${norm(e.name.split(":")[0])} `));
+  if (era) return { video: pickFresh(withThumb.filter((v) => v.era_slug === era.slug), text, state), era };
+  // nothing named: any era — music videos and performances, never the same picture twice in a row
+  const showy = withThumb.filter((v) => v.type === "mv" || v.type === "live");
+  const video = pickFresh(showy.length ? showy : withThumb, text, state);
+  return { video, era: video ? eraOf(video.era_slug) : null };
 }
 const imagesOf = ({ video, era }) => [...(video ? thumbCandidates(video) : []), era?.image].filter(Boolean);
 
@@ -118,7 +134,7 @@ async function newsPost(data, state, browser) {
   console.log(`${stories.length} fresh Gaga stories`);
   if (!stories.length) return null;
   const story = await enrich(stories[0]);
-  const match = photoFor(`${story.title} ${story.summary}`, data);
+  const match = photoFor(`${story.title} ${story.summary}`, data, state);
   const images = [...(ARTICLE_IMAGES && story.articleImage ? [story.articleImage] : []), ...imagesOf(match)];
   const card = {
     kind: "news",
@@ -183,12 +199,12 @@ async function todayPost(data, state, browser) {
       };
     }),
     ...events.map((ev) => {
-      let match = photoFor(`${ev.title} ${ev.description ?? ""}`, data);
+      let match = photoFor(`${ev.title} ${ev.description ?? ""}`, data, state);
       // curated anniversaries know their era: use its photo and hashtag
       const knownEra = ev.era && match.era?.slug !== ev.era ? data.eras.find((e) => e.slug === ev.era) : null;
       if (knownEra) {
         const pool = data.videos.filter((v) => v.era_slug === knownEra.slug && thumbCandidates(v).length);
-        match = { era: knownEra, video: pool.length ? pool[dayNumber % pool.length] : null };
+        match = { era: knownEra, video: pickFresh(pool, ev.title, state) };
       }
       const body = sentences(ev.description, ev.title, 220) || null;
       const line = ev.years
@@ -449,6 +465,7 @@ async function main() {
   // Remember it only when it really went out (or in local test runs without Supabase).
   if (result.id || !db) {
     result.mark();
+    state.recentPhotos = [...(state.recentPhotos ?? []), ...pickedNow].slice(-40);
     if (promoUsed) state.promoIndex = (state.promoIndex || 0) + 1;
     if (slot === "extra") state.lastExtra = now.toISOString();
     await saveState(db, state);
