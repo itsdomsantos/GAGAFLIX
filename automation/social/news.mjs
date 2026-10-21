@@ -12,7 +12,8 @@
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { ROOT, opt } from "../lib.mjs";
-import { POST_MIN_SCORE, relevance, trustedOutlet } from "./relevance.mjs";
+import { resolveGoogleNews } from "./photos.mjs";
+import { POST_MIN_SCORE, relevance, topicsOf, trustedOutlet } from "./relevance.mjs";
 
 const UA = "Mozilla/5.0 (compatible; GAGAFLIX-bot/1.0; +https://gagaflix.com)";
 const MAX_AGE_H = Number(process.env.NEWS_MAX_AGE_HOURS || 48);
@@ -111,11 +112,17 @@ const meta = (html, p) =>
 
 /** What an article page publishes about itself (share title/summary/image, publish date). */
 export function articleMeta(html) {
-  const get = (p) => (meta(html, p) ? entity(meta(html, p)) : null);
+  // some sites double-encode (&amp;quot;) — decode twice
+  const get = (p) => (meta(html, p) ? entity(entity(meta(html, p))) : null);
   return {
     title: get("title"),
     description: get("description"),
-    image: get("image"),
+    image:
+      get("image") ||
+      get("twitter:image") ||
+      get("twitter:image:src") ||
+      html.match(/"image"\s*:\s*(?:\{[^}]*?"url"\s*:\s*)?"(https?:[^"]+\.(?:jpe?g|png|webp)[^"]*)"/i)?.[1]?.replace(/\\\//g, "/") ||
+      null,
     date:
       get("article:published_time") ||
       html.match(/<time[^>]+datetime=["']([^"']+)["']/i)?.[1] ||
@@ -126,7 +133,8 @@ export function articleMeta(html) {
 
 async function sharePreview(url) {
   try {
-    const m = articleMeta((await fetchText(url, 8000)).slice(0, 300_000));
+    // big sites put megabytes of scripts before their share tags: read up to 1.5 MB
+    const m = articleMeta((await fetchText(url, 10000)).slice(0, 1_500_000));
     return { description: m.description, image: m.image };
   } catch {
     return { description: null, image: null };
@@ -194,6 +202,9 @@ export async function freshNews(state, now = new Date()) {
       );
 
   const recent = (state.recentNews ?? []).map((r) => r.title);
+  // topics posted in the last TOPIC_DAYS days: the same running story is not posted again
+  const TOPIC_DAYS = 3;
+  const recentTopics = new Set((state.recentNews ?? []).filter((r) => now - new Date(r.at) < TOPIC_DAYS * 864e5).flatMap((r) => topicsOf(r.title)));
   const cutoff = now.getTime() - MAX_AGE_H * 36e5;
   const all = [];
   const rejected = [];
@@ -210,6 +221,11 @@ export async function freshNews(state, now = new Date()) {
       const t = e.date ? new Date(e.date).getTime() : NaN;
       if (!Number.isFinite(t) || t < cutoff || t > now.getTime() + 36e5) continue;
       if (state.posted?.[newsKey(e.url)] || recent.some((r) => sameStory(r, title))) continue;
+      const repeatTopic = topicsOf(title).find((t) => recentTopics.has(t));
+      if (repeatTopic) {
+        rejected.push({ title, outlet, why: `same running story as a recent post (${repeatTopic})` });
+        continue;
+      }
       const fanSite = source.requireGaga === false;
       const rel = relevance(title, source.aggregator ? "" : e.excerpt, { fanSite });
       if (rel.junk) {
@@ -266,10 +282,13 @@ export async function freshNews(state, now = new Date()) {
 export async function enrich(story) {
   let summary = sentences(story.excerpt, story.title);
   let image = story.image;
-  if (!story.aggregator && (!summary || !image)) {
-    const p = await sharePreview(story.url);
+  // Google News only gives a headline: find the real article for its summary and photo
+  const articleUrl = story.aggregator ? await resolveGoogleNews(story.url) : story.url;
+  if (articleUrl && (!summary || !image)) {
+    const p = await sharePreview(articleUrl);
     summary ||= sentences(p.description, story.title);
     image ||= p.image;
   }
-  return { ...story, summary, articleImage: image };
+  if (story.aggregator) console.log(`  article: ${articleUrl ?? "not resolved"}${image ? " · has a photo" : ""}`);
+  return { ...story, summary, articleImage: image, articleUrl };
 }

@@ -28,6 +28,7 @@ import { instagramConfigured, postCarousel, postImage, postReel } from "./instag
 import { enrich, freshNews, newsKey, sameStory, sentences } from "./news.mjs";
 import { openBrowser, renderCards, thumbCandidates } from "./render.mjs";
 import { renderSiteReel } from "./site-reel.mjs";
+import { photosForStory } from "./photos.mjs";
 import { hostFile, loadState, saveState } from "./state.mjs";
 
 // promo rotation for the extra slot. Reels are NOT in it: the owner edits every promo reel
@@ -107,10 +108,10 @@ function photoFor(text, data, state) {
     .sort((a, b) => Number(b.type === "mv") - Number(a.type === "mv") || shortTitle(b).length - shortTitle(a).length);
   if (named.length) {
     pickedNow.push(named[0].id);
-    return { video: named[0], era: eraOf(named[0].era_slug) };
+    return { video: named[0], era: eraOf(named[0].era_slug), named: true };
   }
   const era = [...data.eras].sort((a, b) => b.name.length - a.name.length).find((e) => norm(e.name).length >= 4 && t.includes(` ${norm(e.name.split(":")[0])} `));
-  if (era) return { video: pickFresh(withThumb.filter((v) => v.era_slug === era.slug), text, state), era };
+  if (era) return { video: pickFresh(withThumb.filter((v) => v.era_slug === era.slug), text, state), era, named: true };
   // nothing named: any era — music videos and performances, never the same picture twice in a row
   const showy = withThumb.filter((v) => v.type === "mv" || v.type === "live");
   const video = pickFresh(showy.length ? showy : withThumb, text, state);
@@ -147,15 +148,26 @@ async function newsPost(data, state, browser) {
   console.log(`${stories.length} fresh Gaga stories`);
   if (!stories.length) return null;
   const story = await enrich(stories[0]);
-  const match = photoFor(`${story.title} ${story.summary}`, data, state);
-  const images = [...(ARTICLE_IMAGES ? articlePhoto(story.articleImage) : []), ...imagesOf(match)];
+  const found = photoFor(`${story.title} ${story.summary}`, data, state);
+  // an era's colour and hashtag only when the story is about it; otherwise her current era
+  const current = [...data.eras].sort((a, b) => b.sort - a.sort)[0] ?? null;
+  const match = found.named ? found : { video: null, era: current, untagged: true };
+  // a photo that fits the story — the article's own, else a free photo of her found for its topic.
+  // Never a still from her videos (they read as low-quality screenshots on a news card).
+  const avoid = new Set(state.recentPhotos ?? []);
+  const free = await photosForStory(story.title, avoid);
+  const images = [...(ARTICLE_IMAGES ? articlePhoto(story.articleImage) : []), ...free.map((f) => f.url), match.era?.image].filter(Boolean);
   const card = {
     kind: "news",
     images,
     data: { accent: match.era?.accent, outlet: story.outlet, dateLabel: short(story.date), title: story.title, summary: story.summary, titleMax: 120, titleLines: 4 },
   };
   const files = await renderCards([card], outDir, browser);
-  const credit = card.chosen && card.chosen === story.articleImage ? `Image via ${story.outlet}.` : creditFor(card.chosen, match.video);
+  const credit =
+    card.chosen && card.chosen === story.articleImage
+      ? `Image via ${story.outlet}.`
+      : free.find((f) => f.url === card.chosen)?.credit ?? creditFor(card.chosen, match.video);
+  if (card.chosen) pickedNow.push(card.chosen);
   const caption = [
     `${story.title} 📰`,
     ...(story.summary ? ["", story.summary] : []),
@@ -166,7 +178,7 @@ async function newsPost(data, state, browser) {
     credit,
     NOTE,
     "",
-    hashtags("#GagaNews", match.era && tagOf(match.era.name)),
+    hashtags("#GagaNews", !match.untagged && match.era && tagOf(match.era.name)),
   ]
     .filter((l) => l !== null)
     .join("\n");
