@@ -1,0 +1,28 @@
+name: probe-photos
+on: push
+permissions:
+  contents: write
+jobs:
+  photos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: |
+          FEED=$(node -e 'const s=require("./automation/news-sources.json").sources.find(s=>s.name==="Google News");console.log([s.feed].flat()[0])')
+          curl -sL "$FEED" -o gn.xml
+          curl -sL "https://www.billboard.com/feed/" -o bb.xml
+          mkdir -p shots
+          n=0
+          for f in "gn.xml|Google News" "gn.xml|Google News" "gn.xml|Google News"; do
+            n=$((n+1)); file=${f%%|*}; src=${f#*|}
+            rm -rf out/social/*news*
+            node --no-warnings automation/social/run.mjs --slot news --dry-run --news-file $file --news-source "$src" 2>&1 | grep -vE "^\s+✗" | grep -E "✓|article|Photo|Image|^#|📰" | head -12
+            cp out/social/*news*/01-news.jpg shots/news-$n.jpg 2>/dev/null || true
+            cp out/social/*news*/caption.txt shots/caption-$n.txt 2>/dev/null || true
+          done
+          git config user.name gh && git config user.email gh@users.noreply.github.com
+          git rm -q .github/workflows/probe-photos.yml && git add -f shots && git commit -qm shots && git push -q
