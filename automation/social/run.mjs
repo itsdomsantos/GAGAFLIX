@@ -28,6 +28,7 @@ import { instagramConfigured, postCarousel, postImage, postReel } from "./instag
 import { enrich, freshNews, newsKey, sameStory, sentences } from "./news.mjs";
 import { openBrowser, renderCards, thumbCandidates } from "./render.mjs";
 import { renderSiteReel } from "./site-reel.mjs";
+import { photosForStory } from "./photos.mjs";
 import { hostFile, loadState, saveState } from "./state.mjs";
 
 // promo rotation for the extra slot. Reels are NOT in it: the owner edits every promo reel
@@ -148,14 +149,22 @@ async function newsPost(data, state, browser) {
   if (!stories.length) return null;
   const story = await enrich(stories[0]);
   const match = photoFor(`${story.title} ${story.summary}`, data, state);
-  const images = [...(ARTICLE_IMAGES ? articlePhoto(story.articleImage) : []), ...imagesOf(match)];
+  // a photo that fits the story — the article's own, else a free photo of her found for its topic.
+  // Never a still from her videos (they read as low-quality screenshots on a news card).
+  const avoid = new Set(state.recentPhotos ?? []);
+  const free = await photosForStory(story.title, avoid);
+  const images = [...(ARTICLE_IMAGES ? articlePhoto(story.articleImage) : []), ...free.map((f) => f.url), match.era?.image].filter(Boolean);
   const card = {
     kind: "news",
     images,
     data: { accent: match.era?.accent, outlet: story.outlet, dateLabel: short(story.date), title: story.title, summary: story.summary, titleMax: 120, titleLines: 4 },
   };
   const files = await renderCards([card], outDir, browser);
-  const credit = card.chosen && card.chosen === story.articleImage ? `Image via ${story.outlet}.` : creditFor(card.chosen, match.video);
+  const credit =
+    card.chosen && card.chosen === story.articleImage
+      ? `Image via ${story.outlet}.`
+      : free.find((f) => f.url === card.chosen)?.credit ?? creditFor(card.chosen, match.video);
+  if (card.chosen) pickedNow.push(card.chosen);
   const caption = [
     `${story.title} 📰`,
     ...(story.summary ? ["", story.summary] : []),

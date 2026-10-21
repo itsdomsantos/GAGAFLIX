@@ -12,6 +12,7 @@
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { ROOT, opt } from "../lib.mjs";
+import { resolveGoogleNews } from "./photos.mjs";
 import { POST_MIN_SCORE, relevance, trustedOutlet } from "./relevance.mjs";
 
 const UA = "Mozilla/5.0 (compatible; GAGAFLIX-bot/1.0; +https://gagaflix.com)";
@@ -266,10 +267,13 @@ export async function freshNews(state, now = new Date()) {
 export async function enrich(story) {
   let summary = sentences(story.excerpt, story.title);
   let image = story.image;
-  if (!story.aggregator && (!summary || !image)) {
-    const p = await sharePreview(story.url);
+  // Google News only gives a headline: find the real article for its summary and photo
+  const articleUrl = story.aggregator ? await resolveGoogleNews(story.url) : story.url;
+  if (articleUrl && (!summary || !image)) {
+    const p = await sharePreview(articleUrl);
     summary ||= sentences(p.description, story.title);
     image ||= p.image;
   }
-  return { ...story, summary, articleImage: image };
+  if (story.aggregator) console.log(`  article: ${articleUrl ?? "not resolved"}${image ? " · has a photo" : ""}`);
+  return { ...story, summary, articleImage: image, articleUrl };
 }
