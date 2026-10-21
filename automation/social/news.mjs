@@ -13,7 +13,7 @@ import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { ROOT, opt } from "../lib.mjs";
 import { resolveGoogleNews } from "./photos.mjs";
-import { POST_MIN_SCORE, relevance, trustedOutlet } from "./relevance.mjs";
+import { POST_MIN_SCORE, relevance, topicsOf, trustedOutlet } from "./relevance.mjs";
 
 const UA = "Mozilla/5.0 (compatible; GAGAFLIX-bot/1.0; +https://gagaflix.com)";
 const MAX_AGE_H = Number(process.env.NEWS_MAX_AGE_HOURS || 48);
@@ -202,6 +202,9 @@ export async function freshNews(state, now = new Date()) {
       );
 
   const recent = (state.recentNews ?? []).map((r) => r.title);
+  // topics posted in the last TOPIC_DAYS days: the same running story is not posted again
+  const TOPIC_DAYS = 3;
+  const recentTopics = new Set((state.recentNews ?? []).filter((r) => now - new Date(r.at) < TOPIC_DAYS * 864e5).flatMap((r) => topicsOf(r.title)));
   const cutoff = now.getTime() - MAX_AGE_H * 36e5;
   const all = [];
   const rejected = [];
@@ -218,6 +221,11 @@ export async function freshNews(state, now = new Date()) {
       const t = e.date ? new Date(e.date).getTime() : NaN;
       if (!Number.isFinite(t) || t < cutoff || t > now.getTime() + 36e5) continue;
       if (state.posted?.[newsKey(e.url)] || recent.some((r) => sameStory(r, title))) continue;
+      const repeatTopic = topicsOf(title).find((t) => recentTopics.has(t));
+      if (repeatTopic) {
+        rejected.push({ title, outlet, why: `same running story as a recent post (${repeatTopic})` });
+        continue;
+      }
       const fanSite = source.requireGaga === false;
       const rel = relevance(title, source.aggregator ? "" : e.excerpt, { fanSite });
       if (rel.junk) {

@@ -85,3 +85,15 @@ export function relevance(title, excerpt = "", { fanSite = false } = {}) {
   }
   return { score, junk: null, reasons };
 }
+
+/**
+ * Running stories outlets keep re-telling with new words ("hints at new music",
+ * "teases next era", "career update after welcoming baby"…). One post per topic
+ * every few days is enough — see TOPIC_DAYS in news.mjs.
+ */
+const TOPICS = [
+  ["new-music", /\b(new (music|album|song|single|era|record)|next (album|era|record|chapter)|upcoming album|career update|studio|recording)\b/i],
+  ["baby", /\b(baby|daughter|motherhood|mom|mother|newborn|parenthood)\b/i],
+  ["engagement", /\b(engag\w*|fianc[eé]e?|wedding|married|polansky)\b/i],
+];
+export const topicsOf = (title) => TOPICS.filter(([, re]) => re.test(title)).map(([t]) => t);
