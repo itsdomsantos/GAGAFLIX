@@ -112,11 +112,17 @@ const meta = (html, p) =>
 
 /** What an article page publishes about itself (share title/summary/image, publish date). */
 export function articleMeta(html) {
-  const get = (p) => (meta(html, p) ? entity(meta(html, p)) : null);
+  // some sites double-encode (&amp;quot;) — decode twice
+  const get = (p) => (meta(html, p) ? entity(entity(meta(html, p))) : null);
   return {
     title: get("title"),
     description: get("description"),
-    image: get("image"),
+    image:
+      get("image") ||
+      get("twitter:image") ||
+      get("twitter:image:src") ||
+      html.match(/"image"\s*:\s*(?:\{[^}]*?"url"\s*:\s*)?"(https?:[^"]+\.(?:jpe?g|png|webp)[^"]*)"/i)?.[1]?.replace(/\\\//g, "/") ||
+      null,
     date:
       get("article:published_time") ||
       html.match(/<time[^>]+datetime=["']([^"']+)["']/i)?.[1] ||
@@ -127,7 +133,8 @@ export function articleMeta(html) {
 
 async function sharePreview(url) {
   try {
-    const m = articleMeta((await fetchText(url, 8000)).slice(0, 300_000));
+    // big sites put megabytes of scripts before their share tags: read up to 1.5 MB
+    const m = articleMeta((await fetchText(url, 10000)).slice(0, 1_500_000));
     return { description: m.description, image: m.image };
   } catch {
     return { description: null, image: null };

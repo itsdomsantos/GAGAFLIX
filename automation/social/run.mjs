@@ -108,10 +108,10 @@ function photoFor(text, data, state) {
     .sort((a, b) => Number(b.type === "mv") - Number(a.type === "mv") || shortTitle(b).length - shortTitle(a).length);
   if (named.length) {
     pickedNow.push(named[0].id);
-    return { video: named[0], era: eraOf(named[0].era_slug) };
+    return { video: named[0], era: eraOf(named[0].era_slug), named: true };
   }
   const era = [...data.eras].sort((a, b) => b.name.length - a.name.length).find((e) => norm(e.name).length >= 4 && t.includes(` ${norm(e.name.split(":")[0])} `));
-  if (era) return { video: pickFresh(withThumb.filter((v) => v.era_slug === era.slug), text, state), era };
+  if (era) return { video: pickFresh(withThumb.filter((v) => v.era_slug === era.slug), text, state), era, named: true };
   // nothing named: any era — music videos and performances, never the same picture twice in a row
   const showy = withThumb.filter((v) => v.type === "mv" || v.type === "live");
   const video = pickFresh(showy.length ? showy : withThumb, text, state);
@@ -148,7 +148,10 @@ async function newsPost(data, state, browser) {
   console.log(`${stories.length} fresh Gaga stories`);
   if (!stories.length) return null;
   const story = await enrich(stories[0]);
-  const match = photoFor(`${story.title} ${story.summary}`, data, state);
+  const found = photoFor(`${story.title} ${story.summary}`, data, state);
+  // an era's colour and hashtag only when the story is about it; otherwise her current era
+  const current = [...data.eras].sort((a, b) => b.sort - a.sort)[0] ?? null;
+  const match = found.named ? found : { video: null, era: current, untagged: true };
   // a photo that fits the story — the article's own, else a free photo of her found for its topic.
   // Never a still from her videos (they read as low-quality screenshots on a news card).
   const avoid = new Set(state.recentPhotos ?? []);
@@ -175,7 +178,7 @@ async function newsPost(data, state, browser) {
     credit,
     NOTE,
     "",
-    hashtags("#GagaNews", match.era && tagOf(match.era.name)),
+    hashtags("#GagaNews", !match.untagged && match.era && tagOf(match.era.name)),
   ]
     .filter((l) => l !== null)
     .join("\n");
